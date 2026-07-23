@@ -1,0 +1,27 @@
+# Environment & Secrets
+.env
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Virtual Environment
+.venv/
+env/
+venv/
+ENV/
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+
+# Derived Embeddings & Logs
+data/embeddings.pkl
+logs/*.log
+
+# Raw Captures (Keep folder structure via .gitkeep)
+raw/*
+!raw/.gitkeep
+

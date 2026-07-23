@@ -1,0 +1,10 @@
+streamlit
+groq
+sentence-transformers
+pypdf
+python-frontmatter
+requests
+beautifulsoup4
+numpy
+python-dotenv
+typer
