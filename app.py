@@ -429,32 +429,7 @@ def main():
         )
 
     # Main Landscape Layout
-    # Section 1: Landscape Knowledge Graph & Legend Banner
-    st.subheader("Knowledge Graph")
-
-    # Color Legend Header in Streamlit UI
-    st.markdown(
-        """
-        <div class="legend-container">
-            <span style="font-weight:700; color:#cbd5e1; margin-right:8px;">Vision:</span>
-            <div class="legend-item"><span class="dot-indicator" style="background-color:#3b82f6;"></span><span>Projects</span></div>
-            <div class="legend-item"><span class="dot-indicator" style="background-color:#10b981;"></span><span>Areas</span></div>
-            <div class="legend-item"><span class="dot-indicator" style="background-color:#8b5cf6;"></span><span>Resources</span></div>
-            <div class="legend-item"><span class="dot-indicator" style="background-color:#64748b;"></span><span>Archives</span></div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    if not nodes:
-        st.info("No notes captured yet. Run `python capture.py` and `python classify.py --all` to get started!")
-    else:
-        graph_html = render_vis_network(graph_data, height_px=540)
-        components.html(graph_html, height=560)
-
-    st.divider()
-
-    # Section 2: Ask Your Brain (Full Width below Landscape Graph)
+    # Section 1: Ask Your Brain (RAG Search) at the top
     st.subheader("💬 Ask Your Brain (RAG Search)")
 
     st.caption("Quick Queries:")
@@ -491,6 +466,31 @@ def main():
                     st.write(f"**Path:** `{src.wiki_path}`")
                     st.write(f"**Relevance Score:** `{src.score:.2%}`")
                     st.write(f"**Note ID:** `{src.id}`")
+
+    st.divider()
+
+    # Section 2: Landscape Knowledge Graph & Vision Legend below Search
+    st.subheader("Knowledge Graph")
+
+    # Color Legend Header in Streamlit UI
+    st.markdown(
+        """
+        <div class="legend-container">
+            <span style="font-weight:700; color:#cbd5e1; margin-right:8px;">Vision:</span>
+            <div class="legend-item"><span class="dot-indicator" style="background-color:#3b82f6;"></span><span>Projects</span></div>
+            <div class="legend-item"><span class="dot-indicator" style="background-color:#10b981;"></span><span>Areas</span></div>
+            <div class="legend-item"><span class="dot-indicator" style="background-color:#8b5cf6;"></span><span>Resources</span></div>
+            <div class="legend-item"><span class="dot-indicator" style="background-color:#64748b;"></span><span>Archives</span></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if not nodes:
+        st.info("No notes captured yet. Run `python capture.py` and `python classify.py --all` to get started!")
+    else:
+        graph_html = render_vis_network(graph_data, height_px=540)
+        components.html(graph_html, height=560)
 
 
 if __name__ == "__main__":
