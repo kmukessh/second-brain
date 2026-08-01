@@ -176,7 +176,7 @@ def render_vis_network(graph_data: Dict[str, Any], height_px: int = 540) -> str:
         title_esc = html.escape(node.get("label", ""))
         tooltip_html = f"<b>{title_esc}</b><br/><i>Category: {cat}</i><br/>{summary_esc}<br/><br/><b>Tags:</b> {tags_str}"
 
-        size = 7 + min(15, (node.get("size", 1) - 1) * 2.5)
+        size = round((7 + min(15, (node.get("size", 1) - 1) * 2.5)) * 0.80, 2)
 
         vis_nodes.append(
             {
