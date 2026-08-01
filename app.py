@@ -328,11 +328,14 @@ def main():
                 if not note_input.strip():
                     st.error("Note content cannot be empty!")
                 else:
-                    with st.spinner("Capturing & classifying note..."):
-                        capture_note(note_input)
-                        process_new_captures()
-                    st.toast("✨ Note captured, classified & graph updated!", icon="🎉")
-                    st.rerun()
+                    try:
+                        with st.spinner("Capturing & classifying note..."):
+                            capture_note(note_input)
+                            process_new_captures()
+                        st.toast("✨ Note captured, classified & graph updated!", icon="🎉")
+                        st.rerun()
+                    except ValueError as exc:
+                        st.warning(f"⚠️ {exc}")
 
         elif cap_type == "🔗 Web Link":
             url_input = st.text_input("URL Link:", placeholder="https://example.com/article")
@@ -340,11 +343,14 @@ def main():
                 if not url_input.strip():
                     st.error("URL cannot be empty!")
                 else:
-                    with st.spinner("Fetching URL preview & classifying..."):
-                        capture_url(url_input)
-                        process_new_captures()
-                    st.toast("✨ URL captured, classified & graph updated!", icon="🎉")
-                    st.rerun()
+                    try:
+                        with st.spinner("Fetching URL preview & classifying..."):
+                            capture_url(url_input)
+                            process_new_captures()
+                        st.toast("✨ URL captured, classified & graph updated!", icon="🎉")
+                        st.rerun()
+                    except ValueError as exc:
+                        st.warning(f"⚠️ {exc}")
 
         elif cap_type == "📁 File":
             uploaded_file = st.file_uploader("Upload File:", type=["txt", "pdf", "md"])
@@ -352,19 +358,22 @@ def main():
                 if uploaded_file is None:
                     st.error("Please select a file to upload!")
                 else:
-                    with st.spinner("Saving file & classifying..."):
-                        temp_dir = config.RAW_DIR / "temp"
-                        temp_dir.mkdir(parents=True, exist_ok=True)
-                        temp_path = temp_dir / uploaded_file.name
-                        temp_path.write_bytes(uploaded_file.getbuffer())
+                    try:
+                        with st.spinner("Saving file & classifying..."):
+                            temp_dir = config.RAW_DIR / "temp"
+                            temp_dir.mkdir(parents=True, exist_ok=True)
+                            temp_path = temp_dir / uploaded_file.name
+                            temp_path.write_bytes(uploaded_file.getbuffer())
 
-                        capture_file(str(temp_path))
-                        if temp_path.exists():
-                            temp_path.unlink()
+                            capture_file(str(temp_path))
+                            if temp_path.exists():
+                                temp_path.unlink()
 
-                        process_new_captures()
-                    st.toast("✨ File captured, classified & graph updated!", icon="🎉")
-                    st.rerun()
+                            process_new_captures()
+                        st.toast("✨ File captured, classified & graph updated!", icon="🎉")
+                        st.rerun()
+                    except ValueError as exc:
+                        st.warning(f"⚠️ {exc}")
 
         st.divider()
 

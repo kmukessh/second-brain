@@ -6,14 +6,15 @@ Phase 1: The Archivist
 One command captures any note, link, or file into raw/ with timestamp + unique ID + sidecar metadata.
 """
 
-import sys
-import os
-import uuid
-import hashlib
-import shutil
-import json
-from datetime import datetime
 import argparse
+import hashlib
+import json
+import os
+import re
+import shutil
+import sys
+import uuid
+from datetime import datetime
 from typing import Optional, Tuple
 import requests
 
@@ -48,6 +49,74 @@ def compute_sha256_file(file_path: os.PathLike) -> str:
     return f"sha256:{sha.hexdigest()}"
 
 
+def normalize_url(url: str) -> str:
+    """Normalize URL string for robust duplicate checking."""
+    u = url.strip().lower()
+    if u.endswith("/"):
+        u = u[:-1]
+    return u
+
+
+def extract_urls(text: str) -> list[str]:
+    """Extract all URLs from a block of text."""
+    url_pattern = re.compile(r'https?://[^\s<>"]+|www\.[^\s<>"]+')
+    found = url_pattern.findall(text)
+    return [normalize_url(u) for u in found]
+
+
+def check_existing_duplicate(content_input: str) -> Optional[str]:
+    """Check if content or URL already exists in raw captures or wiki notes."""
+    clean_input = content_input.strip()
+    if not clean_input:
+        return None
+
+    # 1. Check exact content hash
+    input_hash = compute_sha256_text(clean_input)
+    for meta_file in config.RAW_DIR.glob("*.meta.json"):
+        try:
+            with open(meta_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if data.get("content_hash") == input_hash:
+                    return data.get("id")
+        except Exception:
+            continue
+
+    # 2. Check URL matches across raw captures
+    input_urls = extract_urls(clean_input)
+    if input_urls:
+        for meta_file in config.RAW_DIR.glob("*.meta.json"):
+            try:
+                with open(meta_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    raw_file_rel = data.get("raw_file")
+                    if raw_file_rel:
+                        raw_p = config.ROOT / raw_file_rel
+                        if raw_p.exists():
+                            raw_text = raw_p.read_text(encoding="utf-8", errors="ignore")
+                            existing_urls = extract_urls(raw_text)
+                            for iu in input_urls:
+                                if iu in existing_urls:
+                                    return data.get("id")
+            except Exception:
+                continue
+
+    # 3. Check existing wiki note titles and URL contents
+    for wiki_path in config.WIKI_DIR.glob("*/*.md"):
+        try:
+            content = wiki_path.read_text(encoding="utf-8", errors="ignore")
+            if input_urls:
+                existing_urls = extract_urls(content)
+                for iu in input_urls:
+                    if iu in existing_urls:
+                        return wiki_path.stem
+            if len(clean_input) > 10 and clean_input.lower() in content.lower():
+                return wiki_path.stem
+        except Exception:
+            continue
+
+    return None
+
+
 def check_existing_hash(content_hash: str) -> Optional[str]:
     """Check if content_hash already exists in raw/*.meta.json."""
     for meta_file in config.RAW_DIR.glob("*.meta.json"):
@@ -76,14 +145,15 @@ def capture_note(note_text: str) -> str:
         print("[ERROR] CAP-01: Note text cannot be empty.")
         sys.exit(1)
 
+    existing_id = check_existing_duplicate(text)
+    if existing_id:
+        msg = f"Duplicate content detected! Note/URL already exists in SecondSelf (ID: {existing_id[:8]})."
+        print(f"[WARNING] CAP-07: {msg}")
+        raise ValueError(msg)
+
+    content_hash = compute_sha256_text(text)
     full_id, short_id = generate_uuid()
     prefix = get_timestamp_prefix(short_id)
-    content_hash = compute_sha256_text(text)
-
-    existing_id = check_existing_hash(content_hash)
-    if existing_id:
-        print(f"[WARNING] CAP-07: Duplicate content detected (matches capture ID {existing_id}). Continuing capture...")
-
     raw_filename = f"{prefix}.txt"
     raw_path = config.RAW_DIR / raw_filename
 
@@ -100,7 +170,7 @@ def capture_note(note_text: str) -> str:
         content_hash=content_hash,
         processed=False,
         wiki_path=None,
-        raw_file=str(raw_path.relative_to(config.ROOT))
+        raw_file=str(raw_path.relative_to(config.ROOT)),
     )
 
     save_sidecar_metadata(meta, prefix)
@@ -114,9 +184,15 @@ def capture_url(url_string: str) -> str:
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
 
+    existing_id = check_existing_duplicate(url)
+    if existing_id:
+        msg = f"Duplicate URL detected! Link already exists in SecondSelf (ID: {existing_id[:8]})."
+        print(f"[WARNING] CAP-07: {msg}")
+        raise ValueError(msg)
+
+    content_hash = compute_sha256_text(url)
     full_id, short_id = generate_uuid()
     prefix = get_timestamp_prefix(short_id)
-
     raw_filename = f"{prefix}.url"
     raw_path = config.RAW_DIR / raw_filename
 
@@ -134,7 +210,6 @@ def capture_url(url_string: str) -> str:
     with open(raw_path, "w", encoding="utf-8", errors="replace") as f:
         f.write(fetched_content)
 
-    content_hash = compute_sha256_text(url)
     iso_timestamp = datetime.now().astimezone().isoformat()
     meta = CaptureMetadata(
         id=full_id,
@@ -145,7 +220,7 @@ def capture_url(url_string: str) -> str:
         content_hash=content_hash,
         processed=False,
         wiki_path=None,
-        raw_file=str(raw_path.relative_to(config.ROOT))
+        raw_file=str(raw_path.relative_to(config.ROOT)),
     )
 
     save_sidecar_metadata(meta, prefix)
@@ -156,8 +231,9 @@ def capture_url(url_string: str) -> str:
 def capture_file(file_path_str: str) -> str:
     """Capture a file by copying it into raw/."""
     from pathlib import Path
+
     src_path = Path(file_path_str) if Path(file_path_str).is_absolute() else (config.ROOT / file_path_str)
-    
+
     if not src_path.exists() or not src_path.is_file():
         print(f"[ERROR] CAP-02: File '{file_path_str}' does not exist or is not a valid file.")
         sys.exit(1)
@@ -166,6 +242,13 @@ def capture_file(file_path_str: str) -> str:
     if file_size_mb > config.MAX_FILE_SIZE_MB:
         print(f"[ERROR] CAP-05: File size ({file_size_mb:.2f} MB) exceeds maximum allowed ({config.MAX_FILE_SIZE_MB} MB).")
         sys.exit(1)
+
+    content_hash = compute_sha256_file(src_path)
+    existing_id = check_existing_hash(content_hash)
+    if existing_id:
+        msg = f"Duplicate file detected! File already exists in SecondSelf (ID: {existing_id[:8]})."
+        print(f"[WARNING] CAP-07: {msg}")
+        raise ValueError(msg)
 
     full_id, short_id = generate_uuid()
     prefix = get_timestamp_prefix(short_id)
@@ -179,11 +262,6 @@ def capture_file(file_path_str: str) -> str:
     dest_path = config.RAW_DIR / raw_filename
 
     shutil.copy2(src_path, dest_path)
-    content_hash = compute_sha256_file(dest_path)
-
-    existing_id = check_existing_hash(content_hash)
-    if existing_id:
-        print(f"[WARNING] CAP-07: Duplicate file hash detected (matches capture ID {existing_id}).")
 
     iso_timestamp = datetime.now().astimezone().isoformat()
     meta = CaptureMetadata(
@@ -195,7 +273,7 @@ def capture_file(file_path_str: str) -> str:
         content_hash=content_hash,
         processed=False,
         wiki_path=None,
-        raw_file=str(dest_path.relative_to(config.ROOT))
+        raw_file=str(dest_path.relative_to(config.ROOT)),
     )
 
     save_sidecar_metadata(meta, prefix)
