@@ -50,16 +50,16 @@ st.markdown(
         color: #f8fafc;
     }
     .main-header {
-        font-size: 2.2rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+        font-size: 2.4rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin-bottom: 0.2rem;
     }
     .sub-header {
         color: #94a3b8;
-        font-size: 1.0rem;
+        font-size: 1.05rem;
         margin-bottom: 1.5rem;
     }
     .card {
@@ -72,40 +72,65 @@ st.markdown(
         line-height: 1.6;
     }
     .badge-projects {
-        background-color: rgba(239, 68, 68, 0.2);
-        color: #f87171;
-        border: 1px solid rgba(239, 68, 68, 0.4);
-        padding: 2px 8px;
+        background-color: rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.5);
+        padding: 4px 10px;
         border-radius: 6px;
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         font-weight: 600;
     }
     .badge-areas {
         background-color: rgba(16, 185, 129, 0.2);
         color: #34d399;
-        border: 1px solid rgba(16, 185, 129, 0.4);
-        padding: 2px 8px;
+        border: 1px solid rgba(16, 185, 129, 0.5);
+        padding: 4px 10px;
         border-radius: 6px;
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         font-weight: 600;
     }
     .badge-resources {
         background-color: rgba(139, 92, 246, 0.2);
         color: #c084fc;
-        border: 1px solid rgba(139, 92, 246, 0.4);
-        padding: 2px 8px;
+        border: 1px solid rgba(139, 92, 246, 0.5);
+        padding: 4px 10px;
         border-radius: 6px;
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         font-weight: 600;
     }
     .badge-archives {
-        background-color: rgba(107, 114, 128, 0.2);
-        color: #9ca3af;
-        border: 1px solid rgba(107, 114, 128, 0.4);
-        padding: 2px 8px;
+        background-color: rgba(100, 116, 139, 0.2);
+        color: #94a3b8;
+        border: 1px solid rgba(100, 116, 139, 0.5);
+        padding: 4px 10px;
         border-radius: 6px;
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         font-weight: 600;
+    }
+    .legend-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        background: rgba(30, 41, 59, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 10px 16px;
+        border-radius: 10px;
+        margin-bottom: 12px;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.88rem;
+        color: #e2e8f0;
+    }
+    .dot-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 6px rgba(255,255,255,0.2);
     }
     </style>
     """,
@@ -129,16 +154,16 @@ def load_graph_data() -> Dict[str, Any]:
         return build_graph()
 
 
-def render_vis_network(graph_data: Dict[str, Any], height_px: int = 580) -> str:
-    """Generate HTML string for vis-network force-directed graph."""
+def render_vis_network(graph_data: Dict[str, Any], height_px: int = 540) -> str:
+    """Generate HTML string for vis-network force-directed graph in landscape mode."""
     nodes = graph_data.get("nodes", [])
     edges = graph_data.get("edges", [])
 
     category_colors = {
-        "Projects": "#ef4444",
-        "Areas": "#10b981",
-        "Resources": "#8b5cf6",
-        "Archives": "#6b7280",
+        "Projects": "#3b82f6",   # Blue Circle (Projects)
+        "Areas": "#10b981",      # Green Circle (Areas)
+        "Resources": "#8b5cf6",  # Purple Circle (Resources)
+        "Archives": "#64748b",   # Gray Circle (Archives)
     }
 
     vis_nodes = []
@@ -149,7 +174,7 @@ def render_vis_network(graph_data: Dict[str, Any], height_px: int = 580) -> str:
         tags_str = ", ".join(node.get("tags", []))
         summary_esc = html.escape(node.get("summary", ""))[:200]
         title_esc = html.escape(node.get("label", ""))
-        tooltip_html = f"<b>{title_esc}</b><br/><i>{cat}</i><br/>{summary_esc}<br/><br/><b>Tags:</b> {tags_str}"
+        tooltip_html = f"<b>{title_esc}</b><br/><i>Category: {cat}</i><br/>{summary_esc}<br/><br/><b>Tags:</b> {tags_str}"
 
         vis_nodes.append(
             {
@@ -162,7 +187,7 @@ def render_vis_network(graph_data: Dict[str, Any], height_px: int = 580) -> str:
                     "highlight": {"background": "#f59e0b", "border": "#ffffff"},
                 },
                 "shape": "dot",
-                "size": 12 + min(30, (node.get("size", 1) - 1) * 6),
+                "size": 14 + min(32, (node.get("size", 1) - 1) * 6),
                 "font": {"color": "#f8fafc", "size": 14, "face": "Inter, sans-serif"},
                 "category": cat,
                 "summary": node.get("summary", ""),
@@ -188,17 +213,69 @@ def render_vis_network(graph_data: Dict[str, Any], height_px: int = 580) -> str:
     <head>
       <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
       <style type="text/css">
-        #network {{
+        body {{
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+          background-color: transparent;
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }}
+        .wrapper {{
+          position: relative;
           width: 100%;
           height: {height_px}px;
+        }}
+        #network {{
+          width: 100%;
+          height: 100%;
           background-color: #1e293b;
           border-radius: 12px;
           border: 1px solid #334155;
+          box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }}
+        .graph-legend-overlay {{
+          position: absolute;
+          top: 14px;
+          right: 14px;
+          background: rgba(15, 23, 42, 0.85);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          padding: 10px 14px;
+          border-radius: 8px;
+          color: #f8fafc;
+          font-size: 12px;
+          z-index: 10;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+          pointer-events: none;
+        }}
+        .legend-header {{
+          font-weight: 700;
+          font-size: 13px;
+          color: #60a5fa;
+          margin-bottom: 6px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          padding-bottom: 4px;
+        }}
+        .legend-row {{
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 4px;
+        }}
+        .color-dot {{
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          display: inline-block;
+          border: 1.5px solid #ffffff;
         }}
       </style>
     </head>
     <body>
-      <div id="network"></div>
+      <div class="wrapper">
+        <div id="network"></div>
+      </div>
       <script type="text/javascript">
         var nodes = new vis.DataSet({json.dumps(vis_nodes)});
         var edges = new vis.DataSet({json.dumps(vis_edges)});
@@ -216,12 +293,12 @@ def render_vis_network(graph_data: Dict[str, Any], height_px: int = 580) -> str:
           physics: {{
             solver: 'barnesHut',
             barnesHut: {{
-              gravitationalConstant: -3000,
-              centralGravity: 0.3,
-              springLength: 95,
+              gravitationalConstant: -3500,
+              centralGravity: 0.25,
+              springLength: 110,
               springConstant: 0.04,
               damping: 0.09,
-              avoidOverlap: 0.5
+              avoidOverlap: 0.6
             }},
             stabilization: {{ iterations: 150 }}
           }},
@@ -351,54 +428,69 @@ def main():
             unsafe_allow_html=True,
         )
 
-    # Main Grid Layout
-    left_col, right_col = st.columns([1.2, 1], gap="medium")
+    # Main Landscape Layout
+    # Section 1: Landscape Knowledge Graph & Legend Banner
+    st.subheader("Knowledge Graph")
 
-    with left_col:
-        st.subheader("🕸️ Knowledge Graph")
-        if not nodes:
-            st.info("No notes captured yet. Run `python capture.py` and `python classify.py --all` to get started!")
-        else:
-            graph_html = render_vis_network(graph_data)
-            components.html(graph_html, height=600)
+    # Color Legend Header in Streamlit UI
+    st.markdown(
+        """
+        <div class="legend-container">
+            <span style="font-weight:700; color:#cbd5e1; margin-right:8px;">Vision:</span>
+            <div class="legend-item"><span class="dot-indicator" style="background-color:#3b82f6;"></span><span>Projects</span></div>
+            <div class="legend-item"><span class="dot-indicator" style="background-color:#10b981;"></span><span>Areas</span></div>
+            <div class="legend-item"><span class="dot-indicator" style="background-color:#8b5cf6;"></span><span>Resources</span></div>
+            <div class="legend-item"><span class="dot-indicator" style="background-color:#64748b;"></span><span>Archives</span></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    with right_col:
-        st.subheader("💬 Ask Your Brain")
+    if not nodes:
+        st.info("No notes captured yet. Run `python capture.py` and `python classify.py --all` to get started!")
+    else:
+        graph_html = render_vis_network(graph_data, height_px=540)
+        components.html(graph_html, height=560)
 
-        st.caption("Quick Queries:")
-        q_cols = st.columns(3)
-        query_input = ""
-        if q_cols[0].button("🚀 Projects", use_container_width=True):
-            query_input = "What projects am I currently working on?"
-        if q_cols[1].button("🤖 RAG Notes", use_container_width=True):
-            query_input = "What did I capture about RAG architecture?"
-        if q_cols[2].button("🐍 Python", use_container_width=True):
-            query_input = "What resources do I have about Python?"
+    st.divider()
 
-        user_query = st.text_input(
-            "Search or ask a question:",
-            value=query_input,
-            placeholder="e.g. What notes do I have about vector embeddings?",
+    # Section 2: Ask Your Brain (Full Width below Landscape Graph)
+    st.subheader("💬 Ask Your Brain (RAG Search)")
+
+    st.caption("Quick Queries:")
+    q_cols = st.columns(3)
+    query_input = ""
+    if q_cols[0].button("🚀 Projects", use_container_width=True):
+        query_input = "What projects am I currently working on?"
+    if q_cols[1].button("🤖 RAG Notes", use_container_width=True):
+        query_input = "What did I capture about RAG architecture?"
+    if q_cols[2].button("🐍 Python", use_container_width=True):
+        query_input = "What resources do I have about Python?"
+
+    user_query = st.text_input(
+        "Search or ask a question across your SecondSelf knowledge base:",
+        value=query_input,
+        placeholder="e.g. What notes do I have about vector embeddings?",
+    )
+
+    if user_query:
+        with st.spinner("Searching & synthesizing answer from your SecondSelf Second Brain..."):
+            response = ask(user_query)
+
+        st.markdown("### 💡 Answer")
+        st.markdown(
+            f'<div class="card">{response.answer}</div>',
+            unsafe_allow_html=True,
         )
 
-        if user_query:
-            with st.spinner("Searching & synthesizing answer from your Second Brain..."):
-                response = ask(user_query)
-
-            st.markdown("### 💡 Answer")
-            st.markdown(
-                f'<div class="card">{response.answer}</div>',
-                unsafe_allow_html=True,
-            )
-
-            if response.sources:
-                st.markdown("### 📚 Source Citations")
-                for src in response.sources:
-                    pct = int(src.score * 100)
-                    with st.expander(f"📄 {src.title} ({pct}% match)"):
-                        st.write(f"**Path:** `{src.wiki_path}`")
-                        st.write(f"**Relevance Score:** `{src.score:.2%}`")
-                        st.write(f"**Note ID:** `{src.id}`")
+        if response.sources:
+            st.markdown("### 📚 Source Citations")
+            for src in response.sources:
+                pct = int(src.score * 100)
+                with st.expander(f"📄 {src.title} ({pct}% match)"):
+                    st.write(f"**Path:** `{src.wiki_path}`")
+                    st.write(f"**Relevance Score:** `{src.score:.2%}`")
+                    st.write(f"**Note ID:** `{src.id}`")
 
 
 if __name__ == "__main__":
