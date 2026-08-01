@@ -323,12 +323,7 @@ def main():
         )
 
         if cap_type == "📝 Note":
-            note_input = st.text_area(
-                "Note Text:",
-                placeholder="Type a note, idea, or meeting summary...",
-                height=90,
-                key="quick_note_input",
-            )
+            note_input = st.text_area("Note Text:", placeholder="Type a note, idea, or meeting summary...", height=90)
             if st.button("📥 Save & Process Note", use_container_width=True):
                 if not note_input.strip():
                     st.error("Note content cannot be empty!")
@@ -336,16 +331,11 @@ def main():
                     with st.spinner("Capturing & classifying note..."):
                         capture_note(note_input)
                         process_new_captures()
-                    st.session_state["quick_note_input"] = ""
                     st.toast("✨ Note captured, classified & graph updated!", icon="🎉")
                     st.rerun()
 
         elif cap_type == "🔗 Web Link":
-            url_input = st.text_input(
-                "URL Link:",
-                placeholder="https://example.com/article",
-                key="quick_url_input",
-            )
+            url_input = st.text_input("URL Link:", placeholder="https://example.com/article")
             if st.button("📥 Save & Process Link", use_container_width=True):
                 if not url_input.strip():
                     st.error("URL cannot be empty!")
@@ -353,16 +343,11 @@ def main():
                     with st.spinner("Fetching URL preview & classifying..."):
                         capture_url(url_input)
                         process_new_captures()
-                    st.session_state["quick_url_input"] = ""
                     st.toast("✨ URL captured, classified & graph updated!", icon="🎉")
                     st.rerun()
 
         elif cap_type == "📁 File":
-            uploaded_file = st.file_uploader(
-                "Upload File:",
-                type=["txt", "pdf", "md"],
-                key="quick_file_input",
-            )
+            uploaded_file = st.file_uploader("Upload File:", type=["txt", "pdf", "md"])
             if st.button("📥 Save & Process File", use_container_width=True):
                 if uploaded_file is None:
                     st.error("Please select a file to upload!")
