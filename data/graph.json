@@ -41,6 +41,20 @@
       "size": 1
     },
     {
+      "id": "50cf59d1-4328-49fa-8461-973d0f019a4d",
+      "label": "Python 2.7 Legacy Syntax Reference",
+      "category": "Archives",
+      "tags": [
+        "Python",
+        "Legacy",
+        "Syntax",
+        "Deprecated"
+      ],
+      "summary": "Obsolete reference material for Python 2.7 legacy syntax, deprecated since 2020.",
+      "wiki_path": "wiki/Archives/python-2-7-legacy-syntax-reference-50cf59d1.md",
+      "size": 1
+    },
+    {
       "id": "6202c6b8-8fa0-4b55-906e-1354040c6abb",
       "label": "RAG Architecture Discussion",
       "category": "Projects",
@@ -53,6 +67,20 @@
       "summary": "Notes from a meeting discussing the RAG architecture.",
       "wiki_path": "wiki/Projects/rag-architecture-discussion-6202c6b8.md",
       "size": 5
+    },
+    {
+      "id": "7219e51d-932b-4a5e-9235-fcdb94a80843",
+      "label": "Legacy Server Migration Project Q1 2024",
+      "category": "Projects",
+      "tags": [
+        "Legacy Server",
+        "Migration",
+        "Cloud Infrastructure",
+        "Project Wrap-up"
+      ],
+      "summary": "Completed project for migrating legacy servers to cloud infrastructure in Q1 2024.",
+      "wiki_path": "wiki/Projects/legacy-server-migration-project-q1-2024-7219e51d.md",
+      "size": 1
     },
     {
       "id": "a07b7560-b66b-44fd-ae5a-75684c751b9c",
@@ -190,8 +218,8 @@
     }
   ],
   "metadata": {
-    "generated_at": "2026-08-01T07:37:32.832843Z",
-    "node_count": 10,
+    "generated_at": "2026-08-01T10:11:02.602101Z",
+    "node_count": 12,
     "edge_count": 8
   }
 }
