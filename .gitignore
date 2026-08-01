@@ -1,5 +1,6 @@
 # Environment & Secrets
 .env
+.streamlit/secrets.toml
 
 # Python Bytecode & Cache
 __pycache__/
@@ -16,6 +17,7 @@ ENV/
 # OS Generated Files
 .DS_Store
 Thumbs.db
+Microsoft/
 
 # Derived Embeddings & Logs
 data/embeddings.pkl
@@ -24,4 +26,10 @@ logs/*.log
 # Raw Captures (Keep folder structure via .gitkeep)
 raw/*
 !raw/.gitkeep
+
+# Wiki Notes & Workspace (Keep folder structure via .gitkeep)
+wiki/*/*
+!wiki/*/.gitkeep
+wiki/.obsidian/
+
 

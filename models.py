@@ -17,6 +17,8 @@ class CaptureMetadata:
     processed: bool = False
     wiki_path: Optional[str] = None
     raw_file: Optional[str] = None
+    author: Optional[str] = "Mukesh"
+    author_github: Optional[str] = "https://github.com/kmukessh"
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)

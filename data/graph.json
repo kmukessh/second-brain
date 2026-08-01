@@ -1,0 +1,197 @@
+{
+  "nodes": [
+    {
+      "id": "08d89f24-9f01-4096-a8e6-991df2b65d32",
+      "label": "RAG Architecture Discussion",
+      "category": "Projects",
+      "tags": [
+        "RAG",
+        "Architecture",
+        "Meeting Notes"
+      ],
+      "summary": "Notes from a meeting discussing the RAG architecture.",
+      "wiki_path": "wiki/Projects/rag-architecture-discussion-08d89f24.md",
+      "size": 5
+    },
+    {
+      "id": "2b4004c8-df35-4449-a008-3e2548e6fb26",
+      "label": "SecondSelf — Your Personal AI Second Brain",
+      "category": "Projects",
+      "tags": [
+        "SecondSelf",
+        "Personal AI Second Brain",
+        "Knowledge Management",
+        "PARA Method"
+      ],
+      "summary": "A project to build an end-to-end system for capturing, organizing, and retrieving knowledge using the PARA method and AI.",
+      "wiki_path": "wiki/Projects/secondself-your-personal-ai-second-brain-2b4004c8.md",
+      "size": 1
+    },
+    {
+      "id": "2ee0c6e5-74a5-437a-8cf0-42f0bb83fa16",
+      "label": "Upcoming Live Session",
+      "category": "Projects",
+      "tags": [
+        "live session",
+        "upcoming",
+        "schedule"
+      ],
+      "summary": "Next live session is scheduled for August 1, 2026, from 7-8pm.",
+      "wiki_path": "wiki/Projects/upcoming-live-session-2ee0c6e5.md",
+      "size": 1
+    },
+    {
+      "id": "6202c6b8-8fa0-4b55-906e-1354040c6abb",
+      "label": "RAG Architecture Discussion",
+      "category": "Projects",
+      "tags": [
+        "RAG",
+        "architecture",
+        "meeting",
+        "notes"
+      ],
+      "summary": "Notes from a meeting discussing the RAG architecture.",
+      "wiki_path": "wiki/Projects/rag-architecture-discussion-6202c6b8.md",
+      "size": 5
+    },
+    {
+      "id": "a07b7560-b66b-44fd-ae5a-75684c751b9c",
+      "label": "KMukessh GitHub Profile",
+      "category": "Resources",
+      "tags": [
+        "GitHub",
+        "Profile",
+        "KMukessh"
+      ],
+      "summary": "KMukessh's GitHub profile, containing information about their repositories and contributions.",
+      "wiki_path": "wiki/Resources/kmukessh-github-profile-a07b7560.md",
+      "size": 1
+    },
+    {
+      "id": "bb7aed29-fc3b-46e9-957e-90faf82f42e9",
+      "label": "Python Official Website",
+      "category": "Resources",
+      "tags": [
+        "python",
+        "programming",
+        "language",
+        "official",
+        "website"
+      ],
+      "summary": "The official home of the Python Programming Language",
+      "wiki_path": "wiki/Resources/python-official-website-bb7aed29.md",
+      "size": 3
+    },
+    {
+      "id": "c3f7a300-1ef6-4cc0-8266-6b0690f9f1e8",
+      "label": "Mukesh's GitHub Profile",
+      "category": "Resources",
+      "tags": [
+        "GitHub",
+        "Mukesh",
+        "SecondSelf AI"
+      ],
+      "summary": "Mukesh's GitHub profile with SecondSelf AI Personal Second Brain",
+      "wiki_path": "wiki/Resources/mukesh-s-github-profile-c3f7a300.md",
+      "size": 1
+    },
+    {
+      "id": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
+      "label": "Masai School Learning Platform",
+      "category": "Resources",
+      "tags": [
+        "learning platform",
+        "online courses",
+        "live sessions",
+        "placements"
+      ],
+      "summary": "A learning platform offering courses, live sessions, and placements.",
+      "wiki_path": "wiki/Resources/masai-school-learning-platform-d2c0d4f9.md",
+      "size": 1
+    },
+    {
+      "id": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
+      "label": "Python Official Website",
+      "category": "Resources",
+      "tags": [
+        "python",
+        "programming",
+        "language",
+        "official",
+        "website"
+      ],
+      "summary": "The official home of the Python Programming Language, providing documentation, downloads, and community resources.",
+      "wiki_path": "wiki/Resources/python-official-website-d5f8b196.md",
+      "size": 3
+    },
+    {
+      "id": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
+      "label": "RAG Architecture Discussion",
+      "category": "Projects",
+      "tags": [
+        "RAG",
+        "architecture",
+        "meeting",
+        "notes"
+      ],
+      "summary": "Notes from a meeting discussing the RAG architecture.",
+      "wiki_path": "wiki/Projects/rag-architecture-discussion-e354b65e.md",
+      "size": 5
+    }
+  ],
+  "edges": [
+    {
+      "source": "08d89f24-9f01-4096-a8e6-991df2b65d32",
+      "target": "6202c6b8-8fa0-4b55-906e-1354040c6abb",
+      "type": "semantic_similarity",
+      "weight": 1.0
+    },
+    {
+      "source": "08d89f24-9f01-4096-a8e6-991df2b65d32",
+      "target": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
+      "type": "semantic_similarity",
+      "weight": 1.0
+    },
+    {
+      "source": "6202c6b8-8fa0-4b55-906e-1354040c6abb",
+      "target": "08d89f24-9f01-4096-a8e6-991df2b65d32",
+      "type": "semantic_similarity",
+      "weight": 1.0
+    },
+    {
+      "source": "6202c6b8-8fa0-4b55-906e-1354040c6abb",
+      "target": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
+      "type": "semantic_similarity",
+      "weight": 1.0
+    },
+    {
+      "source": "bb7aed29-fc3b-46e9-957e-90faf82f42e9",
+      "target": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
+      "type": "semantic_similarity",
+      "weight": 0.98
+    },
+    {
+      "source": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
+      "target": "bb7aed29-fc3b-46e9-957e-90faf82f42e9",
+      "type": "semantic_similarity",
+      "weight": 0.98
+    },
+    {
+      "source": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
+      "target": "08d89f24-9f01-4096-a8e6-991df2b65d32",
+      "type": "semantic_similarity",
+      "weight": 1.0
+    },
+    {
+      "source": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
+      "target": "6202c6b8-8fa0-4b55-906e-1354040c6abb",
+      "type": "semantic_similarity",
+      "weight": 1.0
+    }
+  ],
+  "metadata": {
+    "generated_at": "2026-07-28T07:44:53.107877Z",
+    "node_count": 10,
+    "edge_count": 8
+  }
+}

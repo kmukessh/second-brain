@@ -209,15 +209,15 @@ python -c "import pickle; print(len(pickle.load(open('data/embeddings.pkl','rb')
 
 ### Tasks
 
-- [ ] Implement `build_graph.py`:
-  - [ ] Scan all `wiki/**/*.md` files
-  - [ ] Parse YAML frontmatter + `[[links]]`
-  - [ ] Build node list (id, label, category, tags, summary, wiki_path)
-  - [ ] Build edge list (source, target, type, weight)
-  - [ ] Dedupe edges
-  - [ ] Export to `data/graph.json`
-- [ ] Add metadata block (generated_at, node_count, edge_count)
-- [ ] Node size proportional to link count (optional)
+- [x] Implement `build_graph.py`:
+  - [x] Scan all `wiki/**/*.md` files
+  - [x] Parse YAML frontmatter + `[[links]]`
+  - [x] Build node list (id, label, category, tags, summary, wiki_path)
+  - [x] Build edge list (source, target, type, weight)
+  - [x] Dedupe edges
+  - [x] Export to `data/graph.json`
+- [x] Add metadata block (generated_at, node_count, edge_count)
+- [x] Node size proportional to link count (optional)
 
 ### Graph JSON Shape
 
@@ -225,10 +225,10 @@ See `architecture.md` §4.3 for full schema.
 
 ### Acceptance Criteria
 
-- [ ] Script builds nodes + edges from notes
-- [ ] Exports clean, valid JSON
-- [ ] JSON loads without error in any JSON validator
-- [ ] Built from real notes, not dummy data
+- [x] Script builds nodes + edges from notes
+- [x] Exports clean, valid JSON
+- [x] JSON loads without error in any JSON validator
+- [x] Built from real notes, not dummy data
 
 ### Test Commands
 
@@ -245,48 +245,48 @@ python -c "import json; g=json.load(open('data/graph.json')); print(g['metadata'
 
 ### 5A — Interactive Graph (Week 3.2)
 
-- [ ] Create vis-network HTML template with:
-  - [ ] Force-directed layout
-  - [ ] Node colors by PARA category
-  - [ ] Hover tooltips (summary + tags)
-  - [ ] Drag + zoom
-  - [ ] Click node → callback to Streamlit
-- [ ] Embed via `streamlit.components.v1.html()`
-- [ ] Load `data/graph.json` at render time
+- [x] Create vis-network HTML template with:
+  - [x] Force-directed layout
+  - [x] Node colors by PARA category
+  - [x] Hover tooltips (summary + tags)
+  - [x] Drag + zoom
+  - [x] Click node → callback to Streamlit
+- [x] Embed via `streamlit.components.v1.html()`
+- [x] Load `data/graph.json` at render time
 
 ### 5B — RAG Q&A (Week 4.1)
 
-- [ ] Implement `ask.py`:
-  - [ ] `ask(question: str) -> AskResponse`
-  - [ ] Embed question with same model as notes
-  - [ ] Retrieve top-k notes by cosine similarity
-  - [ ] Build context prompt with note excerpts
-  - [ ] Call Groq LLM to synthesize answer
-  - [ ] Return answer + source citations
-- [ ] System prompt: answer ONLY from provided notes; cite sources; say "I don't know" if not found
+- [x] Implement `ask.py`:
+  - [x] `ask(question: str) -> AskResponse`
+  - [x] Embed question with same model as notes
+  - [x] Retrieve top-k notes by cosine similarity
+  - [x] Build context prompt with note excerpts
+  - [x] Call Groq LLM to synthesize answer
+  - [x] Return answer + source citations
+- [x] System prompt: answer ONLY from provided notes; cite sources; say "I don't know" if not found
 
 ### 5C — Streamlit App (Week 4.2)
 
-- [ ] Implement `app.py`:
-  - [ ] Page title + layout (graph left, ask right)
-  - [ ] Graph panel (vis-network component)
-  - [ ] Ask panel (text input + submit + answer display)
-  - [ ] Source citations below answer
-  - [ ] Sidebar: note count, PARA breakdown, link count
-  - [ ] Optional: "Rebuild Graph" button
+- [x] Implement `app.py`:
+  - [x] Page title + layout (graph left, ask right)
+  - [x] Graph panel (vis-network component)
+  - [x] Ask panel (text input + submit + answer display)
+  - [x] Source citations below answer
+  - [x] Sidebar: note count, PARA breakdown, link count
+  - [x] Optional: "Rebuild Graph" button
 
 ### Optional: `pipeline.py`
 
-- [ ] `python pipeline.py ingest` — classify + link + graph
-- [ ] `python pipeline.py ask "question"`
+- [x] `python pipeline.py ingest` — classify + link + graph
+- [x] `python pipeline.py ask "question"`
 
 ### Acceptance Criteria
 
-- [ ] Interactive force-directed graph renders from JSON
-- [ ] Hover reveals note content
-- [ ] Drag + zoom work
-- [ ] `ask()` returns answers synthesized from your own notes
-- [ ] One Streamlit app contains both graph and search bar
+- [x] Interactive force-directed graph renders from JSON
+- [x] Hover reveals note content
+- [x] Drag + zoom work
+- [x] `ask()` returns answers synthesized from your own notes
+- [x] One Streamlit app contains both graph and search bar
 
 ### Test Commands
 

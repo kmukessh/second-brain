@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecondSelf — Knowledge Graph</title>
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 1rem 1.5rem;
+      background: rgba(30, 41, 59, 0.8);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(10px);
+    }
+    h1 {
+      font-size: 1.5rem;
+      background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .legend {
+      display: flex;
+      gap: 1rem;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    #mynetwork {
+      flex: 1;
+      width: 100%;
+      background-color: #1e293b;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>🧠 SecondSelf Knowledge Graph</h1>
+      <div style="font-size:0.85rem; color:#94a3b8; margin-top:2px;">Built by <a href="https://github.com/kmukessh" target="_blank" style="color:#c084fc; text-decoration:none; font-weight:600;">Mukesh</a></div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="dot" style="background: #ef4444;"></div> Projects</div>
+      <div class="legend-item"><div class="dot" style="background: #10b981;"></div> Areas</div>
+      <div class="legend-item"><div class="dot" style="background: #8b5cf6;"></div> Resources</div>
+      <div class="legend-item"><div class="dot" style="background: #6b7280;"></div> Archives</div>
+    </div>
+  </header>
+  <div id="mynetwork"></div>
+
+  <script type="text/javascript">
+    const categoryColors = {
+      'Projects': '#ef4444',
+      'Areas': '#10b981',
+      'Resources': '#8b5cf6',
+      'Archives': '#6b7280'
+    };
+
+    const graphData = {
+      "nodes": [
+        {
+          "id": "2b4004c8-df35-4449-a008-3e2548e6fb26",
+          "label": "SecondSelf — Your Personal AI Second Brain",
+          "category": "Projects",
+          "tags": ["SecondSelf", "Personal AI Second Brain", "Knowledge Management", "PARA Method"],
+          "summary": "A project to build an end-to-end system for capturing, organizing, and retrieving knowledge using the PARA method and AI.",
+          "wiki_path": "wiki/Projects/secondself-your-personal-ai-second-brain-2b4004c8.md",
+          "size": 1
+        },
+        {
+          "id": "6202c6b8-8fa0-4b55-906e-1354040c6abb",
+          "label": "RAG Architecture Discussion",
+          "category": "Projects",
+          "tags": ["RAG", "architecture", "meeting", "notes"],
+          "summary": "Notes from a meeting discussing the RAG architecture.",
+          "wiki_path": "wiki/Projects/rag-architecture-discussion-6202c6b8.md",
+          "size": 3
+        },
+        {
+          "id": "bb7aed29-fc3b-46e9-957e-90faf82f42e9",
+          "label": "Python Official Website",
+          "category": "Resources",
+          "tags": ["python", "programming", "language", "official", "website"],
+          "summary": "The official home of the Python Programming Language",
+          "wiki_path": "wiki/Resources/python-official-website-bb7aed29.md",
+          "size": 3
+        },
+        {
+          "id": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
+          "label": "Python Official Website",
+          "category": "Resources",
+          "tags": ["python", "programming", "language", "official", "website"],
+          "summary": "The official home of the Python Programming Language, providing documentation, downloads, and community resources.",
+          "wiki_path": "wiki/Resources/python-official-website-d5f8b196.md",
+          "size": 3
+        },
+        {
+          "id": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
+          "label": "RAG Architecture Discussion",
+          "category": "Projects",
+          "tags": ["RAG", "architecture", "meeting", "notes"],
+          "summary": "Notes from a meeting discussing the RAG architecture.",
+          "wiki_path": "wiki/Projects/rag-architecture-discussion-e354b65e.md",
+          "size": 3
+        }
+      ],
+      "edges": [
+        {
+          "source": "6202c6b8-8fa0-4b55-906e-1354040c6abb",
+          "target": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
+          "type": "semantic_similarity",
+          "weight": 1.0
+        },
+        {
+          "source": "bb7aed29-fc3b-46e9-957e-90faf82f42e9",
+          "target": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
+          "type": "semantic_similarity",
+          "weight": 0.98
+        },
+        {
+          "source": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
+          "target": "bb7aed29-fc3b-46e9-957e-90faf82f42e9",
+          "type": "semantic_similarity",
+          "weight": 0.98
+        },
+        {
+          "source": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
+          "target": "6202c6b8-8fa0-4b55-906e-1354040c6abb",
+          "type": "semantic_similarity",
+          "weight": 1.0
+        }
+      ]
+    };
+
+    const visNodes = graphData.nodes.map(node => {
+      const color = categoryColors[node.category] || '#3b82f6';
+      const tagsStr = (node.tags || []).join(', ');
+      const tooltip = `<b>${node.label}</b><br/><i>${node.category}</i><br/><br/>${node.summary}<br/><br/><b>Tags:</b> ${tagsStr}`;
+      return {
+        id: node.id,
+        label: node.label,
+        title: tooltip,
+        color: {
+          background: color,
+          border: '#ffffff',
+          highlight: { background: '#f59e0b', border: '#ffffff' }
+        },
+        shape: 'dot',
+        size: 16 + (node.size || 1) * 5,
+        font: { color: '#f8fafc', size: 14, face: 'Inter, sans-serif' }
+      };
+    });
+
+    const visEdges = graphData.edges.map(edge => ({
+      from: edge.source,
+      to: edge.target,
+      value: edge.weight || 1.0,
+      color: { color: '#64748b', highlight: '#6366f1' },
+      arrows: { to: { enabled: true, scaleFactor: 0.5 } }
+    }));
+
+    const container = document.getElementById('mynetwork');
+    const data = {
+      nodes: new vis.DataSet(visNodes),
+      edges: new vis.DataSet(visEdges)
+    };
+    const options = {
+      nodes: {
+        borderWidth: 2,
+        shadow: true
+      },
+      edges: {
+        width: 2,
+        smooth: { type: 'continuous' }
+      },
+      physics: {
+        solver: 'barnesHut',
+        barnesHut: {
+          gravitationalConstant: -4000,
+          centralGravity: 0.3,
+          springLength: 120,
+          springConstant: 0.04,
+          damping: 0.09,
+          avoidOverlap: 0.5
+        }
+      },
+      interaction: {
+        hover: true,
+        tooltipDelay: 50,
+        zoomView: true,
+        dragView: true
+      }
+    };
+
+    new vis.Network(container, data, options);
+  </script>
+</body>
+</html>
