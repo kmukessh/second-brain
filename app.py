@@ -155,15 +155,15 @@ def load_graph_data() -> Dict[str, Any]:
 
 
 def render_vis_network(graph_data: Dict[str, Any], height_px: int = 540) -> str:
-    """Generate HTML string for vis-network force-directed graph in landscape mode."""
+    """Generate HTML string for vis-network neural brain graph."""
     nodes = graph_data.get("nodes", [])
     edges = graph_data.get("edges", [])
 
     category_colors = {
-        "Projects": "#3b82f6",   # Blue Circle (Projects)
-        "Areas": "#10b981",      # Green Circle (Areas)
-        "Resources": "#8b5cf6",  # Purple Circle (Resources)
-        "Archives": "#64748b",   # Gray Circle (Archives)
+        "Projects": "#3b82f6",   # Glowing Blue
+        "Areas": "#10b981",      # Glowing Emerald
+        "Resources": "#8b5cf6",  # Glowing Purple
+        "Archives": "#64748b",   # Glowing Slate Gray
     }
 
     vis_nodes = []
@@ -176,6 +176,8 @@ def render_vis_network(graph_data: Dict[str, Any], height_px: int = 540) -> str:
         title_esc = html.escape(node.get("label", ""))
         tooltip_html = f"<b>{title_esc}</b><br/><i>Category: {cat}</i><br/>{summary_esc}<br/><br/><b>Tags:</b> {tags_str}"
 
+        size = 7 + min(15, (node.get("size", 1) - 1) * 2.5)
+
         vis_nodes.append(
             {
                 "id": node["id"],
@@ -184,26 +186,43 @@ def render_vis_network(graph_data: Dict[str, Any], height_px: int = 540) -> str:
                 "color": {
                     "background": color,
                     "border": "#ffffff",
-                    "highlight": {"background": "#f59e0b", "border": "#ffffff"},
+                    "highlight": {"background": "#38bdf8", "border": "#ffffff"},
+                    "hover": {"background": "#a855f7", "border": "#ffffff"},
                 },
                 "shape": "dot",
-                "size": 14 + min(32, (node.get("size", 1) - 1) * 6),
-                "font": {"color": "#f8fafc", "size": 14, "face": "Inter, sans-serif"},
+                "size": size,
+                "shadow": {
+                    "enabled": True,
+                    "color": color,
+                    "size": 8,
+                    "x": 0,
+                    "y": 0,
+                },
+                "font": {
+                    "color": "#f8fafc",
+                    "size": 11,
+                    "face": "Inter, sans-serif",
+                    "strokeWidth": 2,
+                    "strokeColor": "#0b0f19",
+                },
                 "category": cat,
-                "summary": node.get("summary", ""),
-                "wiki_path": node.get("wiki_path", ""),
             }
         )
 
     vis_edges = []
     for edge in edges:
+        w = edge.get("weight", 1.0)
         vis_edges.append(
             {
                 "from": edge["source"],
                 "to": edge["target"],
-                "value": edge.get("weight", 1.0),
-                "color": {"color": "#475569", "highlight": "#6366f1"},
-                "arrows": {"to": {"enabled": True, "scaleFactor": 0.5}},
+                "width": 1.5 + (w * 1.5),
+                "color": {
+                    "color": "rgba(99, 102, 241, 0.45)",
+                    "highlight": "#38bdf8",
+                    "hover": "#818cf8",
+                },
+                "smooth": {"type": "continuous", "roundness": 0.5},
             }
         )
 
@@ -228,47 +247,10 @@ def render_vis_network(graph_data: Dict[str, Any], height_px: int = 540) -> str:
         #network {{
           width: 100%;
           height: 100%;
-          background-color: #1e293b;
-          border-radius: 12px;
-          border: 1px solid #334155;
-          box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-        }}
-        .graph-legend-overlay {{
-          position: absolute;
-          top: 14px;
-          right: 14px;
-          background: rgba(15, 23, 42, 0.85);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          padding: 10px 14px;
-          border-radius: 8px;
-          color: #f8fafc;
-          font-size: 12px;
-          z-index: 10;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-          pointer-events: none;
-        }}
-        .legend-header {{
-          font-weight: 700;
-          font-size: 13px;
-          color: #60a5fa;
-          margin-bottom: 6px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          padding-bottom: 4px;
-        }}
-        .legend-row {{
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-top: 4px;
-        }}
-        .color-dot {{
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          display: inline-block;
-          border: 1.5px solid #ffffff;
+          background: radial-gradient(circle at center, #1e293b 0%, #0b0f19 100%);
+          border-radius: 14px;
+          border: 1px solid rgba(99, 102, 241, 0.25);
+          box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4);
         }}
       </style>
     </head>
@@ -287,24 +269,23 @@ def render_vis_network(graph_data: Dict[str, Any], height_px: int = 540) -> str:
             shadow: true
           }},
           edges: {{
-            width: 1.5,
-            smooth: {{ type: 'continuous' }}
+            selectionWidth: 3
           }},
           physics: {{
-            solver: 'barnesHut',
-            barnesHut: {{
-              gravitationalConstant: -3500,
-              centralGravity: 0.25,
-              springLength: 110,
-              springConstant: 0.04,
-              damping: 0.09,
+            solver: 'forceAtlas2Based',
+            forceAtlas2Based: {{
+              gravitationalConstant: -35,
+              centralGravity: 0.015,
+              springLength: 95,
+              springConstant: 0.08,
+              damping: 0.4,
               avoidOverlap: 0.6
             }},
-            stabilization: {{ iterations: 150 }}
+            stabilization: {{ iterations: 200 }}
           }},
           interaction: {{
             hover: true,
-            tooltipDelay: 100,
+            tooltipDelay: 80,
             zoomView: true,
             dragView: true
           }}

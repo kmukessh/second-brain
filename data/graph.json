@@ -11,7 +11,7 @@
       ],
       "summary": "Notes from a meeting discussing the RAG architecture.",
       "wiki_path": "wiki/Projects/rag-architecture-discussion-08d89f24.md",
-      "size": 5
+      "size": 4
     },
     {
       "id": "2b4004c8-df35-4449-a008-3e2548e6fb26",
@@ -25,7 +25,7 @@
       ],
       "summary": "A project to build an end-to-end system for capturing, organizing, and retrieving knowledge using the PARA method and AI.",
       "wiki_path": "wiki/Projects/secondself-your-personal-ai-second-brain-2b4004c8.md",
-      "size": 1
+      "size": 3
     },
     {
       "id": "2ee0c6e5-74a5-437a-8cf0-42f0bb83fa16",
@@ -38,7 +38,7 @@
       ],
       "summary": "Next live session is scheduled for August 1, 2026, from 7-8pm.",
       "wiki_path": "wiki/Projects/upcoming-live-session-2ee0c6e5.md",
-      "size": 1
+      "size": 2
     },
     {
       "id": "50cf59d1-4328-49fa-8461-973d0f019a4d",
@@ -52,7 +52,7 @@
       ],
       "summary": "Obsolete reference material for Python 2.7 legacy syntax, deprecated since 2020.",
       "wiki_path": "wiki/Archives/python-2-7-legacy-syntax-reference-50cf59d1.md",
-      "size": 1
+      "size": 3
     },
     {
       "id": "6202c6b8-8fa0-4b55-906e-1354040c6abb",
@@ -66,7 +66,7 @@
       ],
       "summary": "Notes from a meeting discussing the RAG architecture.",
       "wiki_path": "wiki/Projects/rag-architecture-discussion-6202c6b8.md",
-      "size": 5
+      "size": 3
     },
     {
       "id": "7219e51d-932b-4a5e-9235-fcdb94a80843",
@@ -80,7 +80,7 @@
       ],
       "summary": "Completed project for migrating legacy servers to cloud infrastructure in Q1 2024.",
       "wiki_path": "wiki/Projects/legacy-server-migration-project-q1-2024-7219e51d.md",
-      "size": 1
+      "size": 3
     },
     {
       "id": "a07b7560-b66b-44fd-ae5a-75684c751b9c",
@@ -93,7 +93,7 @@
       ],
       "summary": "KMukessh's GitHub profile, containing information about their repositories and contributions.",
       "wiki_path": "wiki/Resources/kmukessh-github-profile-a07b7560.md",
-      "size": 1
+      "size": 5
     },
     {
       "id": "bb7aed29-fc3b-46e9-957e-90faf82f42e9",
@@ -108,7 +108,7 @@
       ],
       "summary": "The official home of the Python Programming Language",
       "wiki_path": "wiki/Resources/python-official-website-bb7aed29.md",
-      "size": 3
+      "size": 5
     },
     {
       "id": "c3f7a300-1ef6-4cc0-8266-6b0690f9f1e8",
@@ -121,7 +121,21 @@
       ],
       "summary": "Mukesh's GitHub profile with SecondSelf AI Personal Second Brain",
       "wiki_path": "wiki/Resources/mukesh-s-github-profile-c3f7a300.md",
-      "size": 1
+      "size": 4
+    },
+    {
+      "id": "c753df2e-ff29-4142-8ffe-7bfdcfa6a4db",
+      "label": "Second Brain Deployment",
+      "category": "Archives",
+      "tags": [
+        "Second Brain",
+        "Deployment",
+        "Knowledge Management",
+        "Completed Project"
+      ],
+      "summary": "Completed deployment milestone for the Second Brain personal knowledge-management application.",
+      "wiki_path": "wiki/Archives/second-brain-deployment-c753df2e.md",
+      "size": 2
     },
     {
       "id": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
@@ -135,7 +149,7 @@
       ],
       "summary": "A learning platform offering courses, live sessions, and placements.",
       "wiki_path": "wiki/Resources/masai-school-learning-platform-d2c0d4f9.md",
-      "size": 1
+      "size": 5
     },
     {
       "id": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
@@ -150,7 +164,7 @@
       ],
       "summary": "The official home of the Python Programming Language, providing documentation, downloads, and community resources.",
       "wiki_path": "wiki/Resources/python-official-website-d5f8b196.md",
-      "size": 3
+      "size": 5
     },
     {
       "id": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
@@ -164,21 +178,39 @@
       ],
       "summary": "Notes from a meeting discussing the RAG architecture.",
       "wiki_path": "wiki/Projects/rag-architecture-discussion-e354b65e.md",
-      "size": 5
+      "size": 3
     }
   ],
   "edges": [
     {
-      "source": "08d89f24-9f01-4096-a8e6-991df2b65d32",
-      "target": "6202c6b8-8fa0-4b55-906e-1354040c6abb",
-      "type": "semantic_similarity",
-      "weight": 1.0
+      "source": "2b4004c8-df35-4449-a008-3e2548e6fb26",
+      "target": "c3f7a300-1ef6-4cc0-8266-6b0690f9f1e8",
+      "type": "embedding_similarity",
+      "weight": 0.38
     },
     {
-      "source": "08d89f24-9f01-4096-a8e6-991df2b65d32",
-      "target": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
-      "type": "semantic_similarity",
-      "weight": 1.0
+      "source": "2b4004c8-df35-4449-a008-3e2548e6fb26",
+      "target": "c753df2e-ff29-4142-8ffe-7bfdcfa6a4db",
+      "type": "tag_similarity",
+      "weight": 0.6
+    },
+    {
+      "source": "2ee0c6e5-74a5-437a-8cf0-42f0bb83fa16",
+      "target": "7219e51d-932b-4a5e-9235-fcdb94a80843",
+      "type": "para_cluster",
+      "weight": 0.5
+    },
+    {
+      "source": "50cf59d1-4328-49fa-8461-973d0f019a4d",
+      "target": "bb7aed29-fc3b-46e9-957e-90faf82f42e9",
+      "type": "tag_similarity",
+      "weight": 0.6
+    },
+    {
+      "source": "50cf59d1-4328-49fa-8461-973d0f019a4d",
+      "target": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
+      "type": "tag_similarity",
+      "weight": 0.6
     },
     {
       "source": "6202c6b8-8fa0-4b55-906e-1354040c6abb",
@@ -187,16 +219,52 @@
       "weight": 1.0
     },
     {
-      "source": "6202c6b8-8fa0-4b55-906e-1354040c6abb",
-      "target": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
-      "type": "semantic_similarity",
-      "weight": 1.0
+      "source": "7219e51d-932b-4a5e-9235-fcdb94a80843",
+      "target": "08d89f24-9f01-4096-a8e6-991df2b65d32",
+      "type": "para_cluster",
+      "weight": 0.5
+    },
+    {
+      "source": "a07b7560-b66b-44fd-ae5a-75684c751b9c",
+      "target": "bb7aed29-fc3b-46e9-957e-90faf82f42e9",
+      "type": "embedding_similarity",
+      "weight": 0.33
+    },
+    {
+      "source": "a07b7560-b66b-44fd-ae5a-75684c751b9c",
+      "target": "c3f7a300-1ef6-4cc0-8266-6b0690f9f1e8",
+      "type": "tag_similarity",
+      "weight": 0.6
+    },
+    {
+      "source": "a07b7560-b66b-44fd-ae5a-75684c751b9c",
+      "target": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
+      "type": "embedding_similarity",
+      "weight": 0.31
+    },
+    {
+      "source": "a07b7560-b66b-44fd-ae5a-75684c751b9c",
+      "target": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
+      "type": "embedding_similarity",
+      "weight": 0.32
     },
     {
       "source": "bb7aed29-fc3b-46e9-957e-90faf82f42e9",
+      "target": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
+      "type": "embedding_similarity",
+      "weight": 0.28
+    },
+    {
+      "source": "c3f7a300-1ef6-4cc0-8266-6b0690f9f1e8",
+      "target": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
+      "type": "embedding_similarity",
+      "weight": 0.26
+    },
+    {
+      "source": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
       "target": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
-      "type": "semantic_similarity",
-      "weight": 0.98
+      "type": "embedding_similarity",
+      "weight": 0.27
     },
     {
       "source": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
@@ -218,8 +286,8 @@
     }
   ],
   "metadata": {
-    "generated_at": "2026-08-01T10:11:02.602101Z",
-    "node_count": 12,
-    "edge_count": 8
+    "generated_at": "2026-08-01T12:42:03.658989Z",
+    "node_count": 13,
+    "edge_count": 17
   }
 }

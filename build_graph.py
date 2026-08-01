@@ -153,10 +153,11 @@ def extract_edges(
     id_lookup: Dict[str, str],
     embeddings: Dict[str, np.ndarray],
 ) -> List[GraphEdge]:
-    """Extract and deduplicate edges from frontmatter links and body wikilinks."""
-    valid_ids = set(notes_by_id.keys())
+    """Extract and deduplicate edges from wikilinks, tag overlap, embedding similarity, and PARA clusters."""
+    valid_ids = sorted(list(notes_by_id.keys()))
     edge_map: Dict[Tuple[str, str], GraphEdge] = {}
 
+    # 1. Process frontmatter links and body wikilinks
     for source_id, note in notes_by_id.items():
         body = note["content"]
 
@@ -167,16 +168,16 @@ def extract_edges(
         # Extract all wikilinks from body
         body_wikilinks = WIKILINK_PATTERN.findall(body)
 
-        # 1. Process frontmatter links (from link.py semantic auto-linker)
+        # Process frontmatter links
         for raw_target in note["frontmatter_links"]:
-            target_id = resolve_link_target(raw_target, id_lookup, valid_ids)
-            if target_id and target_id != source_id and target_id in valid_ids:
+            target_id = resolve_link_target(raw_target, id_lookup, set(valid_ids))
+            if target_id and target_id != source_id and target_id in notes_by_id:
                 weight = 1.0
                 if source_id in embeddings and target_id in embeddings:
                     score = float(np.dot(embeddings[source_id], embeddings[target_id]))
-                    weight = round(max(0.0, min(1.0, score)), 2)
+                    weight = round(max(0.1, min(1.0, score)), 2)
 
-                edge_key = (source_id, target_id)
+                edge_key = (min(source_id, target_id), max(source_id, target_id))
                 edge_map[edge_key] = GraphEdge(
                     source=source_id,
                     target=target_id,
@@ -184,32 +185,91 @@ def extract_edges(
                     weight=weight,
                 )
 
-        # 2. Process body wikilinks
+        # Process body wikilinks
         for raw_target in body_wikilinks:
-            target_id = resolve_link_target(raw_target, id_lookup, valid_ids)
-            if target_id and target_id != source_id and target_id in valid_ids:
-                edge_key = (source_id, target_id)
+            target_id = resolve_link_target(raw_target, id_lookup, set(valid_ids))
+            if target_id and target_id != source_id and target_id in notes_by_id:
+                edge_key = (min(source_id, target_id), max(source_id, target_id))
 
-                # Determine edge type: if inside ## Related section or frontmatter links, it's semantic
                 is_related_section = raw_target in related_text
                 edge_type = "semantic_similarity" if (is_related_section or target_id in note["frontmatter_links"]) else "explicit_link"
 
                 weight = 1.0
                 if source_id in embeddings and target_id in embeddings:
                     score = float(np.dot(embeddings[source_id], embeddings[target_id]))
-                    weight = round(max(0.0, min(1.0, score)), 2)
+                    weight = round(max(0.1, min(1.0, score)), 2)
 
-                if edge_key not in edge_map:
+                if edge_key not in edge_map or weight > edge_map[edge_key].weight:
                     edge_map[edge_key] = GraphEdge(
                         source=source_id,
                         target=target_id,
                         type=edge_type,
                         weight=weight,
                     )
-                else:
-                    existing = edge_map[edge_key]
-                    if weight > existing.weight:
-                        existing.weight = weight
+
+    # 2. Add Tag Similarity Edges (connect notes that share tags)
+    for i, id1 in enumerate(valid_ids):
+        tags1 = set(t.lower() for t in notes_by_id[id1].get("tags", []))
+        if not tags1:
+            continue
+        for id2 in valid_ids[i + 1 :]:
+            tags2 = set(t.lower() for t in notes_by_id[id2].get("tags", []))
+            common = tags1.intersection(tags2)
+            if common:
+                edge_key = (min(id1, id2), max(id1, id2))
+                weight = round(min(1.0, 0.4 + 0.2 * len(common)), 2)
+                if edge_key not in edge_map:
+                    edge_map[edge_key] = GraphEdge(
+                        source=id1,
+                        target=id2,
+                        type="tag_similarity",
+                        weight=weight,
+                    )
+
+    # 3. Add Embedding Cosine Similarity Edges
+    if embeddings:
+        for i, id1 in enumerate(valid_ids):
+            if id1 not in embeddings:
+                continue
+            for id2 in valid_ids[i + 1 :]:
+                if id2 not in embeddings:
+                    continue
+                score = float(np.dot(embeddings[id1], embeddings[id2]))
+                if score >= 0.25:
+                    edge_key = (min(id1, id2), max(id1, id2))
+                    weight = round(max(0.1, min(1.0, score)), 2)
+                    if edge_key not in edge_map:
+                        edge_map[edge_key] = GraphEdge(
+                            source=id1,
+                            target=id2,
+                            type="embedding_similarity",
+                            weight=weight,
+                        )
+
+    # 4. Connect any remaining isolated nodes to their PARA category cluster
+    category_nodes: Dict[str, List[str]] = {}
+    for nid, note in notes_by_id.items():
+        cat = note.get("category", "Resources")
+        category_nodes.setdefault(cat, []).append(nid)
+
+    connected_nodes = set()
+    for e in edge_map.values():
+        connected_nodes.add(e.source)
+        connected_nodes.add(e.target)
+
+    for nid, note in notes_by_id.items():
+        if nid not in connected_nodes:
+            cat = note.get("category", "Resources")
+            same_cat_peers = [p for p in category_nodes.get(cat, []) if p != nid]
+            if same_cat_peers:
+                target_peer = same_cat_peers[0]
+                edge_key = (min(nid, target_peer), max(nid, target_peer))
+                edge_map[edge_key] = GraphEdge(
+                    source=nid,
+                    target=target_peer,
+                    type="para_cluster",
+                    weight=0.5,
+                )
 
     return sorted(edge_map.values(), key=lambda e: (e.source, e.target))
 
