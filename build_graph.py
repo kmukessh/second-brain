@@ -246,30 +246,25 @@ def extract_edges(
                             weight=weight,
                         )
 
-    # 4. Connect any remaining isolated nodes to their PARA category cluster
+    # 4. Connect nodes within each PARA category to form neural hub clusters
     category_nodes: Dict[str, List[str]] = {}
     for nid, note in notes_by_id.items():
         cat = note.get("category", "Resources")
         category_nodes.setdefault(cat, []).append(nid)
 
-    connected_nodes = set()
-    for e in edge_map.values():
-        connected_nodes.add(e.source)
-        connected_nodes.add(e.target)
-
-    for nid, note in notes_by_id.items():
-        if nid not in connected_nodes:
-            cat = note.get("category", "Resources")
-            same_cat_peers = [p for p in category_nodes.get(cat, []) if p != nid]
-            if same_cat_peers:
-                target_peer = same_cat_peers[0]
-                edge_key = (min(nid, target_peer), max(nid, target_peer))
-                edge_map[edge_key] = GraphEdge(
-                    source=nid,
-                    target=target_peer,
-                    type="para_cluster",
-                    weight=0.5,
-                )
+    for cat, members in category_nodes.items():
+        if len(members) > 1:
+            for i in range(len(members)):
+                id1 = members[i]
+                id2 = members[(i + 1) % len(members)]  # Ring/cluster connection
+                edge_key = (min(id1, id2), max(id1, id2))
+                if edge_key not in edge_map:
+                    edge_map[edge_key] = GraphEdge(
+                        source=id1,
+                        target=id2,
+                        type="para_cluster",
+                        weight=0.5,
+                    )
 
     return sorted(edge_map.values(), key=lambda e: (e.source, e.target))
 

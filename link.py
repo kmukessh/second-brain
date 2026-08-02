@@ -94,20 +94,16 @@ def save_embedding_index(index: dict[str, dict[str, Any]]) -> None:
 
 
 def load_embedding_model() -> Any:
-    """Load the configured local sentence-transformers model on demand (cached when running in Streamlit)."""
+    """Load configured sentence-transformers model with local offline fallback."""
     try:
-        import streamlit as st
-        @st.cache_resource(show_spinner=False)
-        def _get_cached_model(model_name: str):
-            from sentence_transformers import SentenceTransformer
-            return SentenceTransformer(model_name)
-        return _get_cached_model(config.EMBEDDING_MODEL)
-    except Exception:
+        from sentence_transformers import SentenceTransformer
         try:
-            from sentence_transformers import SentenceTransformer
-        except ImportError as exc:
-            raise RuntimeError("sentence-transformers is not installed. Run: pip install -r requirements.txt") from exc
-        return SentenceTransformer(config.EMBEDDING_MODEL)
+            return SentenceTransformer(config.EMBEDDING_MODEL, local_files_only=True)
+        except Exception:
+            return SentenceTransformer(config.EMBEDDING_MODEL)
+    except Exception as exc:
+        print(f"[WARNING] LNK-05: Embedding model unavailable: {exc}", file=sys.stderr)
+        return None
 
 
 def normalise_vector(vector: Any) -> np.ndarray:
@@ -131,14 +127,19 @@ def update_embedding_index(notes: Iterable[NoteRecord], index: dict[str, dict[st
     if not to_encode:
         return index
     model = model or load_embedding_model()
-    vectors = model.encode([note.content for note in to_encode], convert_to_numpy=True, show_progress_bar=False)
-    for note, vector in zip(to_encode, vectors, strict=True):
-        index[note.id] = {
-            "content_hash": note.content_hash,
-            "embedding": normalise_vector(vector),
-            "model": config.EMBEDDING_MODEL,
-            "wiki_path": str(note.path.relative_to(config.ROOT)),
-        }
+    if model is None:
+        return index
+    try:
+        vectors = model.encode([note.content for note in to_encode], convert_to_numpy=True, show_progress_bar=False)
+        for note, vector in zip(to_encode, vectors, strict=True):
+            index[note.id] = {
+                "content_hash": note.content_hash,
+                "embedding": normalise_vector(vector),
+                "model": config.EMBEDDING_MODEL,
+                "wiki_path": str(note.path.relative_to(config.ROOT)),
+            }
+    except Exception as exc:
+        print(f"[WARNING] LNK-06: Vector encoding skipped: {exc}", file=sys.stderr)
     return index
 
 

@@ -346,19 +346,13 @@ def main():
         elif cap_type == "🎙️ Voice":
             st.markdown("##### 🎙️ Voice Note Capture")
 
-            # Handle reset BEFORE any widgets are instantiated
-            if st.session_state.get("reset_voice_state", False):
-                st.session_state["voice_transcript"] = ""
-                st.session_state["voice_note_transcript_input"] = ""
-                st.session_state["recorded_audio_bytes"] = None
-                st.session_state["reset_voice_state"] = False
-
             col_v1, col_v2 = st.columns([3, 1])
             with col_v1:
                 st.caption("Click the mic to Record live voice:")
             with col_v2:
                 if st.button("🔄", help="Reset recording & transcript", use_container_width=True):
-                    st.session_state["reset_voice_state"] = True
+                    st.session_state["voice_transcript"] = ""
+                    st.session_state["recorded_audio_bytes"] = None
                     st.rerun()
 
             # 1. Live Microphone Recorder
@@ -393,7 +387,6 @@ def main():
                         text_res = res.get("text", "")
                         if res.get("status") == "success" and text_res:
                             st.session_state["voice_transcript"] = text_res
-                            st.session_state["voice_note_transcript_input"] = text_res
                             st.toast("🎉 Live voice recorded & transcribed!", icon="🎙️")
                         elif res.get("status") == "success":
                             st.warning("⚠️ Recording saved! No clear speech detected.")
@@ -419,7 +412,6 @@ def main():
                             res = transcribe_audio(audio_path)
                             text_res = res.get("text", "")
                             st.session_state["voice_transcript"] = text_res
-                            st.session_state["voice_note_transcript_input"] = text_res
                             if res.get("status") == "success":
                                 st.toast("🎉 Audio file transcribed successfully!", icon="🎙️")
                             else:
@@ -443,26 +435,24 @@ def main():
                 )
 
             # 4. Review & Edit Transcript
-            if "voice_note_transcript_input" not in st.session_state:
-                st.session_state["voice_note_transcript_input"] = st.session_state.get("voice_transcript", "")
-
+            current_transcript = st.session_state.get("voice_transcript", "")
             edited_transcript = st.text_area(
                 "Review & Edit Transcript:",
-                key="voice_note_transcript_input",
+                value=current_transcript,
                 placeholder="Transcribed voice text will appear here. Edit or add details before saving...",
                 height=110,
             )
 
             if st.button("📥 Save & Process Voice Note", use_container_width=True):
-                current_text = st.session_state.get("voice_note_transcript_input", "").strip()
-                if not current_text:
+                if not edited_transcript.strip():
                     st.error("Voice note content cannot be empty!")
                 else:
                     try:
                         with st.spinner("Capturing & classifying voice note..."):
-                            capture_note(current_text)
+                            capture_note(edited_transcript)
                             process_new_captures()
-                        st.session_state["reset_voice_state"] = True
+                        st.session_state["voice_transcript"] = ""
+                        st.session_state["recorded_audio_bytes"] = None
                         st.toast("✨ Voice note captured, classified & graph updated!", icon="🎉")
                         st.rerun()
                     except ValueError as exc:
