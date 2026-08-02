@@ -15,12 +15,18 @@ from typing import Any, Dict
 import streamlit as st
 import streamlit.components.v1 as components
 
+import importlib
 import config
+import voice
+importlib.reload(config)
+importlib.reload(voice)
+
 from ask import ask
 from build_graph import build_graph
 from capture import capture_note, capture_url, capture_file
 from classify import classify_all_unprocessed
 from link import load_wiki_notes, link_notes
+from voice import save_audio_file, transcribe_audio
 
 
 def process_new_captures():
@@ -317,7 +323,7 @@ def main():
         st.header("⚡ Quick Capture")
         cap_type = st.radio(
             "Select Format:",
-            ["📝 Note", "🔗 Web Link", "📁 File"],
+            ["📝 Note", "🎙️ Voice", "🔗 Web Link", "📁 File"],
             horizontal=True,
             key="cap_type_radio",
         )
@@ -333,6 +339,131 @@ def main():
                             capture_note(note_input)
                             process_new_captures()
                         st.toast("✨ Note captured, classified & graph updated!", icon="🎉")
+                        st.rerun()
+                    except ValueError as exc:
+                        st.warning(f"⚠️ {exc}")
+
+        elif cap_type == "🎙️ Voice":
+            st.markdown("##### 🎙️ Voice Note Capture")
+
+            # Handle reset BEFORE any widgets are instantiated
+            if st.session_state.get("reset_voice_state", False):
+                st.session_state["voice_transcript"] = ""
+                st.session_state["voice_note_transcript_input"] = ""
+                st.session_state["recorded_audio_bytes"] = None
+                st.session_state["reset_voice_state"] = False
+
+            col_v1, col_v2 = st.columns([3, 1])
+            with col_v1:
+                st.caption("Click the mic to Record live voice:")
+            with col_v2:
+                if st.button("🔄", help="Reset recording & transcript", use_container_width=True):
+                    st.session_state["reset_voice_state"] = True
+                    st.rerun()
+
+            # 1. Live Microphone Recorder
+            st.markdown("**1. Live Microphone Recording:**")
+            raw_voice_bytes = None
+            try:
+                from audio_recorder_streamlit import audio_recorder
+
+                recorded_data = audio_recorder(
+                    text="Record Live Voice",
+                    recording_color="#ef4444",
+                    neutral_color="#3b82f6",
+                    icon_name="microphone",
+                    icon_size="2x",
+                    key="live_audio_rec_key",
+                )
+
+                if isinstance(recorded_data, bytes) and len(recorded_data) > 0:
+                    raw_voice_bytes = recorded_data
+                elif isinstance(recorded_data, dict) and recorded_data.get("bytes"):
+                    raw_voice_bytes = recorded_data["bytes"]
+            except Exception as exc:
+                st.warning(f"Live mic notice: {exc}")
+
+            # Process & store live recording
+            if raw_voice_bytes and st.session_state.get("recorded_audio_bytes") != raw_voice_bytes:
+                st.session_state["recorded_audio_bytes"] = raw_voice_bytes
+                try:
+                    with st.spinner("Transcribing your voice with Whisper AI..."):
+                        audio_path = save_audio_file(raw_voice_bytes, extension=".wav")
+                        res = transcribe_audio(audio_path)
+                        text_res = res.get("text", "")
+                        if res.get("status") == "success" and text_res:
+                            st.session_state["voice_transcript"] = text_res
+                            st.session_state["voice_note_transcript_input"] = text_res
+                            st.toast("🎉 Live voice recorded & transcribed!", icon="🎙️")
+                        elif res.get("status") == "success":
+                            st.warning("⚠️ Recording saved! No clear speech detected.")
+                        else:
+                            st.error(f"Transcription error: {res.get('status')}")
+                except Exception as exc:
+                    st.error(f"Failed to save/transcribe recording: {exc}")
+
+            # 2. Audio File Upload Option (Alternative)
+            st.markdown("**2. Or Upload Audio File:**")
+            uploaded_audio = st.file_uploader(
+                "Upload Voice Memo / Audio File:",
+                type=["wav", "mp3", "m4a", "ogg", "webm"],
+                key="uploaded_voice_file",
+            )
+            if uploaded_audio is not None:
+                if st.button("✨ Transcribe Uploaded Audio", use_container_width=True):
+                    with st.spinner("Transcribing audio file with Whisper AI..."):
+                        try:
+                            audio_bytes_file = uploaded_audio.getvalue()
+                            st.session_state["recorded_audio_bytes"] = audio_bytes_file
+                            audio_path = save_audio_file(uploaded_audio)
+                            res = transcribe_audio(audio_path)
+                            text_res = res.get("text", "")
+                            st.session_state["voice_transcript"] = text_res
+                            st.session_state["voice_note_transcript_input"] = text_res
+                            if res.get("status") == "success":
+                                st.toast("🎉 Audio file transcribed successfully!", icon="🎙️")
+                            else:
+                                st.error(f"Transcription status: {res.get('status')}")
+                        except Exception as exc:
+                            st.error(f"Failed to transcribe audio file: {exc}")
+
+            # 3. Audio Playback Player (Hear your recording!)
+            current_audio = st.session_state.get("recorded_audio_bytes")
+            if current_audio and isinstance(current_audio, bytes):
+                import base64
+
+                st.markdown("##### 🔊 Hear Your Recording:")
+                b64_audio = base64.b64encode(current_audio).decode()
+                st.markdown(
+                    f'<audio controls controlsList="nodownload" style="width: 100%; border-radius: 8px; margin: 8px 0;">'
+                    f'<source src="data:audio/wav;base64,{b64_audio}" type="audio/wav">'
+                    f'Your browser does not support audio playing.'
+                    f'</audio>',
+                    unsafe_allow_html=True,
+                )
+
+            # 4. Review & Edit Transcript
+            if "voice_note_transcript_input" not in st.session_state:
+                st.session_state["voice_note_transcript_input"] = st.session_state.get("voice_transcript", "")
+
+            edited_transcript = st.text_area(
+                "Review & Edit Transcript:",
+                key="voice_note_transcript_input",
+                placeholder="Transcribed voice text will appear here. Edit or add details before saving...",
+                height=110,
+            )
+
+            if st.button("📥 Save & Process Voice Note", use_container_width=True):
+                current_text = st.session_state.get("voice_note_transcript_input", "").strip()
+                if not current_text:
+                    st.error("Voice note content cannot be empty!")
+                else:
+                    try:
+                        with st.spinner("Capturing & classifying voice note..."):
+                            capture_note(current_text)
+                            process_new_captures()
+                        st.session_state["reset_voice_state"] = True
+                        st.toast("✨ Voice note captured, classified & graph updated!", icon="🎉")
                         st.rerun()
                     except ValueError as exc:
                         st.warning(f"⚠️ {exc}")

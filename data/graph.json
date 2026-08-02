@@ -1,6 +1,32 @@
 {
   "nodes": [
     {
+      "id": "07dc463f-320e-461e-be5a-625ae6118c2b",
+      "label": "Phoenix Mall Visit",
+      "category": "Areas",
+      "tags": [
+        "Shopping",
+        "Travel",
+        "Leisure"
+      ],
+      "summary": "Visited Phoenix Mall on August 2nd.",
+      "wiki_path": "wiki/Areas/phoenix-mall-visit-07dc463f.md",
+      "size": 3
+    },
+    {
+      "id": "1deaf324-6feb-475d-aded-26af5d58bc67",
+      "label": "Phoenix Mall Visit",
+      "category": "Areas",
+      "tags": [
+        "Mall",
+        "Travel",
+        "Personal"
+      ],
+      "summary": "I visited Phoenix Mall on August 2nd for personal reasons.",
+      "wiki_path": "wiki/Areas/phoenix-mall-visit-1deaf324.md",
+      "size": 3
+    },
+    {
       "id": "2b4004c8-df35-4449-a008-3e2548e6fb26",
       "label": "SecondSelf — Your Personal AI Second Brain",
       "category": "Projects",
@@ -12,7 +38,7 @@
       ],
       "summary": "A project to build an end-to-end system for capturing, organizing, and retrieving knowledge using the PARA method and AI.",
       "wiki_path": "wiki/Projects/secondself-your-personal-ai-second-brain-2b4004c8.md",
-      "size": 3
+      "size": 1
     },
     {
       "id": "2ee0c6e5-74a5-437a-8cf0-42f0bb83fa16",
@@ -25,7 +51,7 @@
       ],
       "summary": "Next live session is scheduled for August 1, 2026, from 7-8pm.",
       "wiki_path": "wiki/Projects/upcoming-live-session-2ee0c6e5.md",
-      "size": 2
+      "size": 1
     },
     {
       "id": "50cf59d1-4328-49fa-8461-973d0f019a4d",
@@ -39,7 +65,7 @@
       ],
       "summary": "Obsolete reference material for Python 2.7 legacy syntax, deprecated since 2020.",
       "wiki_path": "wiki/Archives/python-2-7-legacy-syntax-reference-50cf59d1.md",
-      "size": 2
+      "size": 1
     },
     {
       "id": "7219e51d-932b-4a5e-9235-fcdb94a80843",
@@ -53,7 +79,7 @@
       ],
       "summary": "Completed project for migrating legacy servers to cloud infrastructure in Q1 2024.",
       "wiki_path": "wiki/Projects/legacy-server-migration-project-q1-2024-7219e51d.md",
-      "size": 4
+      "size": 1
     },
     {
       "id": "c3f7a300-1ef6-4cc0-8266-6b0690f9f1e8",
@@ -66,7 +92,7 @@
       ],
       "summary": "Mukesh's GitHub profile with SecondSelf AI Personal Second Brain",
       "wiki_path": "wiki/Resources/mukesh-s-github-profile-c3f7a300.md",
-      "size": 4
+      "size": 1
     },
     {
       "id": "c753df2e-ff29-4142-8ffe-7bfdcfa6a4db",
@@ -80,7 +106,7 @@
       ],
       "summary": "Completed deployment milestone for the Second Brain personal knowledge-management application.",
       "wiki_path": "wiki/Archives/second-brain-deployment-c753df2e.md",
-      "size": 5
+      "size": 1
     },
     {
       "id": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
@@ -94,7 +120,7 @@
       ],
       "summary": "A learning platform offering courses, live sessions, and placements.",
       "wiki_path": "wiki/Resources/masai-school-learning-platform-d2c0d4f9.md",
-      "size": 4
+      "size": 1
     },
     {
       "id": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
@@ -109,7 +135,7 @@
       ],
       "summary": "The official home of the Python Programming Language, providing documentation, downloads, and community resources.",
       "wiki_path": "wiki/Resources/python-official-website-d5f8b196.md",
-      "size": 3
+      "size": 1
     },
     {
       "id": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
@@ -123,74 +149,26 @@
       ],
       "summary": "Notes from a meeting discussing the RAG architecture.",
       "wiki_path": "wiki/Projects/rag-architecture-discussion-e354b65e.md",
-      "size": 2
+      "size": 1
     }
   ],
   "edges": [
     {
-      "source": "2b4004c8-df35-4449-a008-3e2548e6fb26",
-      "target": "c3f7a300-1ef6-4cc0-8266-6b0690f9f1e8",
-      "type": "embedding_similarity",
-      "weight": 0.38
+      "source": "07dc463f-320e-461e-be5a-625ae6118c2b",
+      "target": "1deaf324-6feb-475d-aded-26af5d58bc67",
+      "type": "semantic_similarity",
+      "weight": 0.96
     },
     {
-      "source": "2b4004c8-df35-4449-a008-3e2548e6fb26",
-      "target": "c753df2e-ff29-4142-8ffe-7bfdcfa6a4db",
-      "type": "tag_similarity",
-      "weight": 0.6
-    },
-    {
-      "source": "2ee0c6e5-74a5-437a-8cf0-42f0bb83fa16",
-      "target": "7219e51d-932b-4a5e-9235-fcdb94a80843",
-      "type": "para_cluster",
-      "weight": 0.5
-    },
-    {
-      "source": "50cf59d1-4328-49fa-8461-973d0f019a4d",
-      "target": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
-      "type": "tag_similarity",
-      "weight": 0.6
-    },
-    {
-      "source": "7219e51d-932b-4a5e-9235-fcdb94a80843",
-      "target": "c753df2e-ff29-4142-8ffe-7bfdcfa6a4db",
-      "type": "embedding_similarity",
-      "weight": 0.3
-    },
-    {
-      "source": "c3f7a300-1ef6-4cc0-8266-6b0690f9f1e8",
-      "target": "c753df2e-ff29-4142-8ffe-7bfdcfa6a4db",
-      "type": "embedding_similarity",
-      "weight": 0.46
-    },
-    {
-      "source": "c3f7a300-1ef6-4cc0-8266-6b0690f9f1e8",
-      "target": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
-      "type": "embedding_similarity",
-      "weight": 0.26
-    },
-    {
-      "source": "c753df2e-ff29-4142-8ffe-7bfdcfa6a4db",
-      "target": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
-      "type": "embedding_similarity",
-      "weight": 0.26
-    },
-    {
-      "source": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
-      "target": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
-      "type": "embedding_similarity",
-      "weight": 0.27
-    },
-    {
-      "source": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
-      "target": "7219e51d-932b-4a5e-9235-fcdb94a80843",
-      "type": "para_cluster",
-      "weight": 0.5
+      "source": "1deaf324-6feb-475d-aded-26af5d58bc67",
+      "target": "07dc463f-320e-461e-be5a-625ae6118c2b",
+      "type": "semantic_similarity",
+      "weight": 0.96
     }
   ],
   "metadata": {
-    "generated_at": "2026-08-01T13:51:16.994160Z",
-    "node_count": 9,
-    "edge_count": 10
+    "generated_at": "2026-08-02T15:29:07.908708Z",
+    "node_count": 11,
+    "edge_count": 2
   }
 }

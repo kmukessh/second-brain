@@ -19,8 +19,12 @@ ENV/
 Thumbs.db
 Microsoft/
 
-# Derived Embeddings & Logs
+# Derived Embeddings, Audio & Logs
 data/embeddings.pkl
+data/audio/*
+!data/audio/.gitkeep
+credentials/*
+!credentials/.gitkeep
 logs/*.log
 
 # Raw Captures (Keep folder structure via .gitkeep)

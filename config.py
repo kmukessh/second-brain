@@ -60,3 +60,28 @@ GOOGLE_SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/tasks",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    """Dynamic module attribute fallback for Streamlit hot-reloads."""
+    if name == "AUDIO_DIR":
+        audio_dir = DATA_DIR / "audio"
+        audio_dir.mkdir(parents=True, exist_ok=True)
+        return audio_dir
+    if name == "WHISPER_MODEL":
+        return _get_config("WHISPER_MODEL", "base")
+    if name == "CREDENTIALS_DIR":
+        cred_dir = ROOT / "credentials"
+        cred_dir.mkdir(parents=True, exist_ok=True)
+        return cred_dir
+    if name == "GOOGLE_CLIENT_SECRET_FILE":
+        return (ROOT / "credentials") / "client_secret.json"
+    if name == "GOOGLE_TOKEN_FILE":
+        return (ROOT / "credentials") / "token.json"
+    if name == "GOOGLE_SCOPES":
+        return [
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/gmail.readonly",
+            "https://www.googleapis.com/auth/tasks",
+        ]
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
