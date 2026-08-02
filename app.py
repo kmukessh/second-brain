@@ -22,6 +22,7 @@ importlib.reload(config)
 importlib.reload(voice)
 
 from ask import ask
+from models import AskResponse
 from build_graph import build_graph
 from capture import capture_note, capture_url, capture_file
 from classify import classify_all_unprocessed
@@ -543,6 +544,9 @@ def main():
     # Section 1: Ask Your Brain (RAG Search) at the top
     st.subheader("💬 Ask Your Brain (RAG Search)")
 
+    if "recent_questions" not in st.session_state:
+        st.session_state["recent_questions"] = []
+
     st.caption("Quick Queries:")
     q_cols = st.columns(3)
     query_input = ""
@@ -560,14 +564,46 @@ def main():
     )
 
     if user_query:
-        with st.spinner("Searching & synthesizing answer from your SecondSelf Second Brain..."):
-            response = ask(user_query)
+        clean_q = user_query.strip()
+        q_lower = clean_q.lower()
+
+        # Check if user is asking about previous questions / history
+        history_phrases = [
+            "previous", "prev", "last question", "past question", "asked",
+            "search history", "what did i ask", "my question", "queries", "history"
+        ]
+        is_history_query = any(p in q_lower for p in history_phrases)
+
+        current_history = st.session_state.get("recent_questions", [])
+
+        if is_history_query:
+            if current_history:
+                history_formatted = "\n".join(f"**{i+1}.** {q}" for i, q in enumerate(current_history))
+                ans_text = f"**Here are the questions you previously asked in this session:**\n\n{history_formatted}"
+            else:
+                ans_text = "You haven't asked any previous questions in this session yet."
+            response = AskResponse(answer=ans_text, sources=[])
+        else:
+            # Save new question to history (Keep last 3 questions)
+            if clean_q and clean_q not in current_history:
+                st.session_state["recent_questions"].insert(0, clean_q)
+                st.session_state["recent_questions"] = st.session_state["recent_questions"][:3]
+
+            with st.spinner("Searching & synthesizing answer from your SecondSelf Second Brain..."):
+                response = ask(user_query)
 
         st.markdown("### 💡 Answer")
         st.markdown(
             f'<div class="card">{response.answer}</div>',
             unsafe_allow_html=True,
         )
+
+        # Always show Last 3 Recent Questions History under the answer if available
+        all_history = st.session_state.get("recent_questions", [])[:3]
+        if all_history:
+            with st.expander("📜 Last 3 Previously Asked Questions", expanded=is_history_query):
+                for idx, q in enumerate(all_history, 1):
+                    st.write(f"**{idx}.** {q}")
 
         if response.sources:
             st.markdown("### 📚 Source Citations")
