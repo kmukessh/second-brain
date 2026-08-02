@@ -11,7 +11,7 @@
       ],
       "summary": "Visited Phoenix Mall on August 2nd.",
       "wiki_path": "wiki/Areas/phoenix-mall-visit-07dc463f.md",
-      "size": 3
+      "size": 4
     },
     {
       "id": "1deaf324-6feb-475d-aded-26af5d58bc67",
@@ -24,7 +24,7 @@
       ],
       "summary": "I visited Phoenix Mall on August 2nd for personal reasons.",
       "wiki_path": "wiki/Areas/phoenix-mall-visit-1deaf324.md",
-      "size": 3
+      "size": 4
     },
     {
       "id": "2b4004c8-df35-4449-a008-3e2548e6fb26",
@@ -122,6 +122,19 @@
       "size": 7
     },
     {
+      "id": "cbf841d0-1d55-4a27-a99e-edb401ba562d",
+      "label": "Personal Dates",
+      "category": "Areas",
+      "tags": [
+        "birthday",
+        "personal",
+        "dates"
+      ],
+      "summary": "My birthday is on October 25.",
+      "wiki_path": "wiki/Areas/personal-dates-cbf841d0.md",
+      "size": 4
+    },
+    {
       "id": "cf0ee7b7-0acc-4198-a4ed-0f901063b218",
       "label": "Mukesh Birthday",
       "category": "Areas",
@@ -132,7 +145,7 @@
       ],
       "summary": "Mukesh's birthday is on 25th October.",
       "wiki_path": "wiki/Areas/mukesh-birthday-cf0ee7b7.md",
-      "size": 4
+      "size": 5
     },
     {
       "id": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
@@ -181,6 +194,12 @@
   "edges": [
     {
       "source": "07dc463f-320e-461e-be5a-625ae6118c2b",
+      "target": "cbf841d0-1d55-4a27-a99e-edb401ba562d",
+      "type": "embedding_similarity",
+      "weight": 0.4
+    },
+    {
+      "source": "07dc463f-320e-461e-be5a-625ae6118c2b",
       "target": "cf0ee7b7-0acc-4198-a4ed-0f901063b218",
       "type": "embedding_similarity",
       "weight": 0.28
@@ -190,6 +209,12 @@
       "target": "07dc463f-320e-461e-be5a-625ae6118c2b",
       "type": "semantic_similarity",
       "weight": 0.96
+    },
+    {
+      "source": "1deaf324-6feb-475d-aded-26af5d58bc67",
+      "target": "cbf841d0-1d55-4a27-a99e-edb401ba562d",
+      "type": "tag_similarity",
+      "weight": 0.6
     },
     {
       "source": "1deaf324-6feb-475d-aded-26af5d58bc67",
@@ -294,6 +319,12 @@
       "weight": 0.26
     },
     {
+      "source": "cbf841d0-1d55-4a27-a99e-edb401ba562d",
+      "target": "cf0ee7b7-0acc-4198-a4ed-0f901063b218",
+      "type": "tag_similarity",
+      "weight": 0.6
+    },
+    {
       "source": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
       "target": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
       "type": "embedding_similarity",
@@ -307,8 +338,8 @@
     }
   ],
   "metadata": {
-    "generated_at": "2026-08-02T16:20:29.014684Z",
-    "node_count": 13,
-    "edge_count": 21
+    "generated_at": "2026-08-02T16:33:18.341734Z",
+    "node_count": 14,
+    "edge_count": 24
   }
 }

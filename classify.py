@@ -181,10 +181,29 @@ def find_capture(capture_id: str, captures: Iterable[tuple[Path, CaptureMetadata
     return matches[0]
 
 
+def fallback_classify(body: str) -> dict[str, Any]:
+    """Generate a valid fallback classification when LLM call fails."""
+    lines = [l.strip() for l in body.splitlines() if l.strip()]
+    first_line = lines[0] if lines else "Captured Note"
+    clean_title = re.sub(r"^#+\s*", "", first_line).strip()[:60] or "Captured Note"
+    summary = body[:150].replace("\n", " ").strip() or "Captured knowledge note."
+    return {
+        "para_category": "Resources",
+        "title": clean_title,
+        "tags": ["capture", "resource"],
+        "summary": summary,
+    }
+
+
 def classify_capture(meta_path: Path, metadata: CaptureMetadata) -> Path:
     """Classify one capture, write its note, then mark its sidecar as processed."""
     body = extract_text(raw_path_for(metadata, meta_path))
-    classification = call_llm_classify(body)
+    try:
+        classification = call_llm_classify(body)
+    except Exception as exc:
+        print(f"[WARNING] CLS-02: LLM classification fallback for {metadata.id.split('-')[0]}: {exc}", file=sys.stderr)
+        classification = fallback_classify(body)
+
     wiki_path = write_wiki_note(metadata, classification, body)
     mark_raw_processed(meta_path, metadata, wiki_path)
     return wiki_path

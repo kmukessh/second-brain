@@ -100,7 +100,7 @@ def check_existing_duplicate(content_input: str) -> Optional[str]:
             except Exception:
                 continue
 
-    # 3. Check existing wiki note titles and URL contents
+    # 3. Check existing wiki note URL contents
     for wiki_path in config.WIKI_DIR.glob("*/*.md"):
         try:
             content = wiki_path.read_text(encoding="utf-8", errors="ignore")
@@ -109,8 +109,6 @@ def check_existing_duplicate(content_input: str) -> Optional[str]:
                 for iu in input_urls:
                     if iu in existing_urls:
                         return wiki_path.stem
-            if len(clean_input) > 10 and clean_input.lower() in content.lower():
-                return wiki_path.stem
         except Exception:
             continue
 
