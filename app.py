@@ -114,31 +114,6 @@ st.markdown(
         font-size: 0.85rem;
         font-weight: 600;
     }
-    .legend-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        align-items: center;
-        background: rgba(30, 41, 59, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 10px 16px;
-        border-radius: 10px;
-        margin-bottom: 12px;
-    }
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.88rem;
-        color: #e2e8f0;
-    }
-    .dot-indicator {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        display: inline-block;
-        box-shadow: 0 0 6px rgba(255,255,255,0.2);
-    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -162,147 +137,518 @@ def load_graph_data() -> Dict[str, Any]:
 
 
 def render_vis_network(graph_data: Dict[str, Any], height_px: int = 540) -> str:
-    """Generate HTML string for vis-network neural brain graph."""
+    """Generate HTML string for 3D Geodesic Sphere interactive knowledge graph visualization using Three.js."""
     nodes = graph_data.get("nodes", [])
     edges = graph_data.get("edges", [])
 
     category_colors = {
-        "Projects": "#3b82f6",   # Glowing Blue
+        "Projects": "#ef4444",   # Glowing Red
         "Areas": "#10b981",      # Glowing Emerald
         "Resources": "#8b5cf6",  # Glowing Purple
-        "Archives": "#64748b",   # Glowing Slate Gray
+        "Archives": "#64748b",   # Slate Gray
     }
 
-    vis_nodes = []
+    clean_nodes = []
     for node in nodes:
         cat = node.get("category", "Resources")
         color = category_colors.get(cat, "#3b82f6")
+        clean_nodes.append({
+            "id": str(node.get("id", "")),
+            "label": str(node.get("label", "Untitled")),
+            "category": cat,
+            "color": color,
+            "tags": node.get("tags", []),
+            "summary": str(node.get("summary", "")),
+            "wiki_path": str(node.get("wiki_path", ""))
+        })
 
-        tags_str = ", ".join(node.get("tags", []))
-        summary_esc = html.escape(node.get("summary", ""))[:200]
-        title_esc = html.escape(node.get("label", ""))
-        tooltip_html = f"<b>{title_esc}</b><br/><i>Category: {cat}</i><br/>{summary_esc}<br/><br/><b>Tags:</b> {tags_str}"
-
-        size = round((7 + min(15, (node.get("size", 1) - 1) * 2.5)) * 0.80, 2)
-
-        vis_nodes.append(
-            {
-                "id": node["id"],
-                "label": node["label"],
-                "title": tooltip_html,
-                "color": {
-                    "background": color,
-                    "border": "#ffffff",
-                    "highlight": {"background": "#38bdf8", "border": "#ffffff"},
-                    "hover": {"background": "#a855f7", "border": "#ffffff"},
-                },
-                "shape": "dot",
-                "size": size,
-                "shadow": {
-                    "enabled": True,
-                    "color": color,
-                    "size": 8,
-                    "x": 0,
-                    "y": 0,
-                },
-                "font": {
-                    "color": "#f8fafc",
-                    "size": 11,
-                    "face": "Inter, sans-serif",
-                    "strokeWidth": 2,
-                    "strokeColor": "#0b0f19",
-                },
-                "category": cat,
-            }
-        )
-
-    vis_edges = []
+    clean_edges = []
     for edge in edges:
-        w = edge.get("weight", 1.0)
-        vis_edges.append(
-            {
-                "from": edge["source"],
-                "to": edge["target"],
-                "width": 1.5 + (w * 1.5),
-                "color": {
-                    "color": "rgba(99, 102, 241, 0.45)",
-                    "highlight": "#38bdf8",
-                    "hover": "#818cf8",
-                },
-                "smooth": {"type": "continuous", "roundness": 0.5},
-            }
-        )
+        clean_edges.append({
+            "source": str(edge.get("source", "")),
+            "target": str(edge.get("target", "")),
+            "weight": float(edge.get("weight", 1.0)),
+            "type": str(edge.get("type", "semantic"))
+        })
+
+    json_nodes = json.dumps(clean_nodes)
+    json_edges = json.dumps(clean_edges)
 
     html_code = f"""
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
-      <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-      <style type="text/css">
+      <meta charset="UTF-8">
+      <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
         body {{
-          margin: 0;
-          padding: 0;
-          overflow: hidden;
-          background-color: transparent;
+          background: #0b0f19;
+          color: #f8fafc;
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        }}
-        .wrapper {{
-          position: relative;
-          width: 100%;
+          overflow: hidden;
+          width: 100vw;
           height: {height_px}px;
         }}
-        #network {{
+        #container {{
+          position: relative;
           width: 100%;
           height: 100%;
           background: radial-gradient(circle at center, #1e293b 0%, #0b0f19 100%);
-          border-radius: 14px;
-          border: 1px solid rgba(99, 102, 241, 0.25);
-          box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4);
+          border-radius: 12px;
+          border: 1px solid rgba(99, 102, 241, 0.3);
+          box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+        }}
+        #canvas-3d {{
+          width: 100%;
+          height: 100%;
+          display: block;
+        }}
+        .controls-bar {{
+          position: absolute;
+          bottom: 14px;
+          left: 14px;
+          display: flex;
+          gap: 8px;
+          z-index: 10;
+        }}
+        .btn-ctrl {{
+          background: rgba(30, 41, 59, 0.75);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #cbd5e1;
+          padding: 5px 10px;
+          border-radius: 6px;
+          font-size: 0.75rem;
+          cursor: pointer;
+          backdrop-filter: blur(8px);
+          transition: all 0.2s ease;
+        }}
+        .btn-ctrl:hover {{
+          background: rgba(99, 102, 241, 0.3);
+          border-color: #6366f1;
+          color: #fff;
+        }}
+        .node-tooltip {{
+          position: absolute;
+          top: 14px;
+          right: 14px;
+          width: 280px;
+          background: rgba(15, 23, 42, 0.88);
+          border: 1px solid rgba(99, 102, 241, 0.4);
+          border-radius: 10px;
+          padding: 12px 14px;
+          backdrop-filter: blur(12px);
+          box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+          display: none;
+          z-index: 20;
+          pointer-events: auto;
+          transition: opacity 0.2s ease;
+        }}
+        .tooltip-title {{
+          font-size: 0.92rem;
+          font-weight: 600;
+          color: #f8fafc;
+          margin-bottom: 4px;
+        }}
+        .tooltip-cat {{
+          display: inline-block;
+          font-size: 0.68rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          padding: 2px 8px;
+          border-radius: 12px;
+          margin-bottom: 8px;
+        }}
+        .tooltip-summary {{
+          font-size: 0.78rem;
+          color: #cbd5e1;
+          line-height: 1.35;
+          margin-bottom: 8px;
+          max-height: 80px;
+          overflow-y: auto;
+        }}
+        .tooltip-tags {{
+          font-size: 0.7rem;
+          color: #94a3b8;
+        }}
+        .legend-bar {{
+          position: absolute;
+          top: 14px;
+          right: 14px;
+          display: flex;
+          gap: 10px;
+          background: rgba(15, 23, 42, 0.6);
+          padding: 6px 12px;
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(8px);
+          z-index: 10;
+        }}
+        .legend-item {{
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 0.72rem;
+          color: #cbd5e1;
+        }}
+        .legend-dot {{
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
         }}
       </style>
+
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     </head>
     <body>
-      <div class="wrapper">
-        <div id="network"></div>
+      <div id="container">
+        <div class="legend-bar" id="legendBar">
+          <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div> Projects</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#10b981;"></div> Areas</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6;"></div> Resources</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#64748b;"></div> Archives</div>
+        </div>
+
+        <div class="node-tooltip" id="tooltip">
+          <div class="tooltip-title" id="ttTitle">Node Title</div>
+          <div class="tooltip-cat" id="ttCat">Category</div>
+          <div class="tooltip-summary" id="ttSummary">Summary content...</div>
+          <div class="tooltip-tags" id="ttTags">Tags: none</div>
+        </div>
+
+        <div class="controls-bar">
+          <button class="btn-ctrl" id="btnAutoRotate">Auto-Rotate: ON</button>
+          <button class="btn-ctrl" id="btnResetView">Reset View</button>
+        </div>
+
+        <canvas id="canvas-3d"></canvas>
       </div>
-      <script type="text/javascript">
-        var nodes = new vis.DataSet({json.dumps(vis_nodes)});
-        var edges = new vis.DataSet({json.dumps(vis_edges)});
-        var container = document.getElementById('network');
-        var data = {{ nodes: nodes, edges: edges }};
-        var options = {{
-          nodes: {{
-            borderWidth: 2,
-            shadow: true
-          }},
-          edges: {{
-            selectionWidth: 3
-          }},
-          physics: {{
-            solver: 'forceAtlas2Based',
-            forceAtlas2Based: {{
-              gravitationalConstant: -35,
-              centralGravity: 0.015,
-              springLength: 95,
-              springConstant: 0.08,
-              damping: 0.4,
-              avoidOverlap: 0.6
-            }},
-            stabilization: {{ iterations: 200 }}
-          }},
-          interaction: {{
-            hover: true,
-            tooltipDelay: 80,
-            zoomView: true,
-            dragView: true
+
+      <script>
+        const nodesData = {json_nodes};
+        const edgesData = {json_edges};
+
+        const container = document.getElementById('container');
+        const canvas = document.getElementById('canvas-3d');
+        const tooltip = document.getElementById('tooltip');
+        const legendBar = document.getElementById('legendBar');
+
+        let scene, camera, renderer, controls;
+        let geodesicGroup, nodesGroup, edgesGroup, particlesGroup;
+        let nodeMeshes = [];
+        let edgeLines = [];
+        let isAutoRotate = true;
+        let hoveredNode = null;
+
+        const SPHERE_RADIUS = 180;
+
+        function init() {{
+          // Scene
+          scene = new THREE.Scene();
+
+          // Camera
+          camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 1, 3000);
+          camera.position.set(0, 50, 480);
+
+          // Renderer
+          renderer = new THREE.WebGLRenderer({{ canvas: canvas, antialias: true, alpha: true }});
+          renderer.setSize(container.clientWidth, container.clientHeight);
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+          // OrbitControls
+          controls = new THREE.OrbitControls(camera, renderer.domElement);
+          controls.enableDamping = true;
+          controls.dampingFactor = 0.05;
+          controls.rotateSpeed = 0.8;
+          controls.zoomSpeed = 1.0;
+          controls.maxDistance = 1000;
+          controls.minDistance = 100;
+
+          // Lighting
+          const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+          scene.add(ambientLight);
+
+          const dirLight1 = new THREE.DirectionalLight(0x38bdf8, 1.2);
+          dirLight1.position.set(300, 400, 300);
+          scene.add(dirLight1);
+
+          const dirLight2 = new THREE.DirectionalLight(0xa855f7, 0.8);
+          dirLight2.position.set(-300, -300, -200);
+          scene.add(dirLight2);
+
+          // Parent Groups
+          geodesicGroup = new THREE.Group();
+          nodesGroup = new THREE.Group();
+          edgesGroup = new THREE.Group();
+          particlesGroup = new THREE.Group();
+
+          geodesicGroup.add(nodesGroup);
+          geodesicGroup.add(edgesGroup);
+          scene.add(geodesicGroup);
+          scene.add(particlesGroup);
+
+          buildGeodesicStructure();
+          buildNodes();
+          buildEdges();
+          buildBackgroundParticles();
+
+          // Interactivity
+          window.addEventListener('resize', onWindowResize);
+          canvas.addEventListener('mousemove', onMouseMove);
+
+          document.getElementById('btnAutoRotate').addEventListener('click', () => {{
+            isAutoRotate = !isAutoRotate;
+            document.getElementById('btnAutoRotate').textContent = 'Auto-Rotate: ' + (isAutoRotate ? 'ON' : 'OFF');
+          }});
+
+          document.getElementById('btnResetView').addEventListener('click', () => {{
+            camera.position.set(0, 50, 480);
+            controls.target.set(0, 0, 0);
+            controls.update();
+          }});
+
+          animate();
+        }}
+
+        function buildGeodesicStructure() {{
+          // Icosahedron detail 2 creates a true Geodesic Sphere layout mesh
+          const icoGeo = new THREE.IcosahedronGeometry(SPHERE_RADIUS, 2);
+
+          // Wireframe Cage
+          const wireframeGeo = new THREE.WireframeGeometry(icoGeo);
+          // LineBasicMaterial is part of the core Three.js build loaded above.
+          // (LineMaterial requires an additional examples module.)
+          const wireframeMat = new THREE.LineBasicMaterial({{
+            color: 0x6366f1,
+            transparent: true,
+            opacity: 0.18
+          }});
+          const wireframeMesh = new THREE.LineSegments(wireframeGeo, wireframeMat);
+          geodesicGroup.add(wireframeMesh);
+
+          // Geodesic Vertices Glowing Lattice Points
+          const ptsMat = new THREE.PointsMaterial({{
+            color: 0x38bdf8,
+            size: 3,
+            transparent: true,
+            opacity: 0.4
+          }});
+          const ptsMesh = new THREE.Points(icoGeo, ptsMat);
+          geodesicGroup.add(ptsMesh);
+        }}
+
+        function buildNodes() {{
+          const numNodes = nodesData.length;
+          const nodePosMap = new Map();
+
+          nodesData.forEach((node, i) => {{
+            // Uniform spherical distribution across Geodesic Sphere surface (Fibonacci sphere algorithm)
+            const phi = Math.acos(1 - 2 * (i + 0.5) / Math.max(1, numNodes));
+            const theta = Math.PI * (1 + Math.sqrt(5)) * (i + 0.5);
+
+            const r = SPHERE_RADIUS;
+            const x = r * Math.sin(phi) * Math.cos(theta);
+            const y = r * Math.sin(phi) * Math.sin(theta);
+            const z = r * Math.cos(phi);
+
+            const pos = new THREE.Vector3(x, y, z);
+            nodePosMap.set(node.id, pos);
+
+            // Node Sphere Mesh
+            // Keep all graph nodes equally small; category color conveys type.
+            const radiusSize = 4;
+            const sphereGeo = new THREE.SphereGeometry(radiusSize, 24, 24);
+            const sphereMat = new THREE.MeshPhongMaterial({{
+              color: new THREE.Color(node.color),
+              emissive: new THREE.Color(node.color).multiplyScalar(0.35),
+              shininess: 90,
+              transparent: true,
+              opacity: 0.95
+            }});
+
+            const mesh = new THREE.Mesh(sphereGeo, sphereMat);
+            mesh.position.copy(pos);
+            mesh.userData = {{ nodeData: node, originalScale: 1.0, color: node.color, pos: pos }};
+
+            // Glow Ring Sprite
+            const canvasGlow = document.createElement('canvas');
+            canvasGlow.width = 64; canvasGlow.height = 64;
+            const ctx = canvasGlow.getContext('2d');
+            const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            grad.addColorStop(0, node.color);
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0,0,64,64);
+
+            const texture = new THREE.CanvasTexture(canvasGlow);
+            const spriteMat = new THREE.SpriteMaterial({{ map: texture, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending }});
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(radiusSize * 2.5, radiusSize * 2.5, 1);
+            mesh.add(sprite);
+
+            nodesGroup.add(mesh);
+            nodeMeshes.push(mesh);
+          }});
+
+          window.nodePosMap = nodePosMap;
+        }}
+
+        function buildEdges() {{
+          const nodePosMap = window.nodePosMap;
+          if (!nodePosMap) return;
+
+          edgesData.forEach(edge => {{
+            const p1 = nodePosMap.get(edge.source);
+            const p2 = nodePosMap.get(edge.target);
+
+            if (p1 && p2) {{
+              // Elevate curve outward above sphere surface for 3D geodesic arc feel
+              const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+              const midLength = mid.length();
+              if (midLength > 0) {{
+                mid.normalize().multiplyScalar(SPHERE_RADIUS * (1.12 + edge.weight * 0.08));
+              }}
+
+              const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
+              const points = curve.getPoints(30);
+              const curveGeo = new THREE.BufferGeometry().setFromPoints(points);
+
+              const lineMat = new THREE.LineBasicMaterial({{
+                color: 0x818cf8,
+                transparent: true,
+                opacity: Math.max(0.25, Math.min(0.7, edge.weight * 0.6))
+              }});
+
+              const line = new THREE.Line(curveGeo, lineMat);
+              line.userData = {{ source: edge.source, target: edge.target, originalOpacity: lineMat.opacity }};
+              edgesGroup.add(line);
+              edgeLines.push(line);
+            }}
+          }});
+        }}
+
+        function buildBackgroundParticles() {{
+          const count = 350;
+          const pGeo = new THREE.BufferGeometry();
+          const pPos = new Float32Array(count * 3);
+
+          for (let i = 0; i < count * 3; i += 3) {{
+            pPos[i] = (Math.random() - 0.5) * 1200;
+            pPos[i+1] = (Math.random() - 0.5) * 1200;
+            pPos[i+2] = (Math.random() - 0.5) * 1200;
           }}
-        }};
-        var network = new vis.Network(container, data, options);
+
+          pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+          const pMat = new THREE.PointsMaterial({{
+            color: 0x475569,
+            size: 2,
+            transparent: true,
+            opacity: 0.5
+          }});
+
+          const pMesh = new THREE.Points(pGeo, pMat);
+          particlesGroup.add(pMesh);
+        }}
+
+        function onMouseMove(event) {{
+          const rect = canvas.getBoundingClientRect();
+          const mouse = new THREE.Vector2(
+            ((event.clientX - rect.left) / container.clientWidth) * 2 - 1,
+            -((event.clientY - rect.top) / container.clientHeight) * 2 + 1
+          );
+
+          const raycaster = new THREE.Raycaster();
+          raycaster.setFromCamera(mouse, camera);
+
+          const intersects = raycaster.intersectObjects(nodeMeshes);
+
+          if (intersects.length > 0) {{
+            const hitMesh = intersects[0].object;
+            if (hoveredNode !== hitMesh) {{
+              resetHighlight();
+              hoveredNode = hitMesh;
+              highlightNode(hitMesh);
+            }}
+          }} else {{
+            if (hoveredNode) {{
+              resetHighlight();
+              hoveredNode = null;
+            }}
+          }}
+        }}
+
+        function highlightNode(mesh) {{
+          mesh.scale.set(1.5, 1.5, 1.5);
+          mesh.material.emissive.setHex(0x38bdf8);
+
+          const nData = mesh.userData.nodeData;
+
+          // Tooltip Populating
+          document.getElementById('ttTitle').textContent = nData.label;
+          const catElem = document.getElementById('ttCat');
+          catElem.textContent = nData.category;
+          catElem.style.background = nData.color + '33';
+          catElem.style.color = nData.color;
+          catElem.style.border = '1px solid ' + nData.color;
+
+          document.getElementById('ttSummary').textContent = nData.summary || 'No summary available.';
+          document.getElementById('ttTags').textContent = 'Tags: ' + (nData.tags && nData.tags.length ? nData.tags.join(', ') : 'none');
+
+          tooltip.style.display = 'block';
+          legendBar.style.display = 'none';
+
+          // Edge Highlighting
+          edgeLines.forEach(line => {{
+            if (line.userData.source === nData.id || line.userData.target === nData.id) {{
+              line.material.opacity = 0.9;
+              line.material.color.setHex(0x38bdf8);
+            }} else {{
+              line.material.opacity = 0.08;
+            }}
+          }});
+        }}
+
+        function resetHighlight() {{
+          nodeMeshes.forEach(mesh => {{
+            mesh.scale.set(1, 1, 1);
+            mesh.material.emissive.copy(new THREE.Color(mesh.userData.color).multiplyScalar(0.35));
+          }});
+
+          edgeLines.forEach(line => {{
+            line.material.opacity = line.userData.originalOpacity;
+            line.material.color.setHex(0x818cf8);
+          }});
+
+          tooltip.style.display = 'none';
+          legendBar.style.display = 'flex';
+        }}
+
+        function onWindowResize() {{
+          camera.aspect = container.clientWidth / container.clientHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(container.clientWidth, container.clientHeight);
+        }}
+
+        function animate() {{
+          requestAnimationFrame(animate);
+
+          if (isAutoRotate && !hoveredNode) {{
+            geodesicGroup.rotation.y += 0.003;
+            geodesicGroup.rotation.x += 0.001;
+            particlesGroup.rotation.y += 0.0005;
+          }}
+
+          controls.update();
+          renderer.render(scene, camera);
+        }}
+
+        window.onload = init;
       </script>
     </body>
     </html>
     """
     return html_code
+
 
 
 def main():
@@ -616,22 +962,8 @@ def main():
 
     st.divider()
 
-    # Section 2: Landscape Knowledge Graph & Vision Legend below Search
+    # Section 2: Landscape Knowledge Graph below Search
     st.subheader("Knowledge Graph")
-
-    # Color Legend Header in Streamlit UI
-    st.markdown(
-        """
-        <div class="legend-container">
-            <span style="font-weight:700; color:#cbd5e1; margin-right:8px;">Vision:</span>
-            <div class="legend-item"><span class="dot-indicator" style="background-color:#3b82f6;"></span><span>Projects</span></div>
-            <div class="legend-item"><span class="dot-indicator" style="background-color:#10b981;"></span><span>Areas</span></div>
-            <div class="legend-item"><span class="dot-indicator" style="background-color:#8b5cf6;"></span><span>Resources</span></div>
-            <div class="legend-item"><span class="dot-indicator" style="background-color:#64748b;"></span><span>Archives</span></div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
     if not nodes:
         st.info("No notes captured yet. Run `python capture.py` and `python classify.py --all` to get started!")
