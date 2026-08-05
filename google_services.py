@@ -28,6 +28,24 @@ except ImportError:
     _GOOGLE_CLIENT_AVAILABLE = False
 
 
+def _get_secret_val(key: str) -> Optional[Any]:
+    """Retrieve secret dict or string from Streamlit secrets or environment variables."""
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        pass
+    import os
+    val = os.getenv(key, "")
+    if val:
+        try:
+            return json.loads(val)
+        except Exception:
+            return val
+    return None
+
+
 class GoogleServiceManager:
     """Reusable Google Workspace OAuth2 and API Client Manager."""
 
@@ -50,7 +68,9 @@ class GoogleServiceManager:
         return _GOOGLE_CLIENT_AVAILABLE
 
     def has_client_secrets(self) -> bool:
-        """Check if credentials/client_secret.json exists."""
+        """Check if credentials/client_secret.json exists or GOOGLE_CLIENT_SECRET_JSON is in secrets."""
+        if _get_secret_val("GOOGLE_CLIENT_SECRET_JSON") or _get_secret_val("GOOGLE_TOKEN_JSON"):
+            return True
         return self.client_secret_file.exists() and self.client_secret_file.stat().st_size > 0
 
     def is_authenticated(self) -> bool:
@@ -67,8 +87,20 @@ class GoogleServiceManager:
             return self._credentials
 
         creds = None
-        # Load token if it exists
-        if self.token_file.exists():
+
+        # 0. Check Streamlit Secrets / Environment variable for GOOGLE_TOKEN_JSON
+        token_secret = _get_secret_val("GOOGLE_TOKEN_JSON")
+        if token_secret:
+            try:
+                if isinstance(token_secret, str):
+                    token_secret = json.loads(token_secret)
+                if isinstance(token_secret, dict):
+                    creds = Credentials.from_authorized_user_info(token_secret, self.scopes)
+            except Exception as exc:
+                print(f"[WARNING] GGL-01: Invalid GOOGLE_TOKEN_JSON secret: {exc}")
+
+        # 1. Load token if it exists on disk
+        if not creds and self.token_file.exists():
             try:
                 creds = Credentials.from_authorized_user_file(str(self.token_file), self.scopes)
             except Exception as exc:
@@ -84,14 +116,12 @@ class GoogleServiceManager:
 
         # Authenticate if missing or invalid
         if not creds or not creds.valid:
-            if self.has_client_secrets():
+            if self.has_client_secrets() and self.client_secret_file.exists():
                 try:
                     import os
                     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
                     flow = InstalledAppFlow.from_client_secrets_file(str(self.client_secret_file), self.scopes, redirect_uri="http://localhost:8080/")
                     creds = flow.run_local_server(host="localhost", port=8080, open_browser=True, prompt="consent")
-
-
 
                     # Persist token for future runs
                     self.token_file.parent.mkdir(parents=True, exist_ok=True)
@@ -101,7 +131,6 @@ class GoogleServiceManager:
                     return None
             else:
                 return None
-
 
         self._credentials = creds
         return creds

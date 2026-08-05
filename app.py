@@ -1078,7 +1078,8 @@ def main():
                     except Exception as exc:
                         st.error(f"Auth error: {exc}")
         else:
-            st.caption("Place `client_secret.json` in `credentials/` folder to enable direct OAuth sync.")
+            st.info("ℹ️ 1-Tap Google Calendar template links active")
+            st.caption("To enable direct automatic OAuth sync on cloud server, paste `GOOGLE_TOKEN_JSON` into Streamlit Secrets.")
 
         st.divider()
 
