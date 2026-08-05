@@ -11,7 +11,9 @@
       ],
       "summary": "Visited Phoenix Mall on August 2nd.",
       "wiki_path": "wiki/Areas/phoenix-mall-visit-07dc463f.md",
-      "size": 4
+      "size": 4,
+      "is_meeting": false,
+      "calendar_event_link": null
     },
     {
       "id": "1deaf324-6feb-475d-aded-26af5d58bc67",
@@ -24,7 +26,9 @@
       ],
       "summary": "I visited Phoenix Mall on August 2nd for personal reasons.",
       "wiki_path": "wiki/Areas/phoenix-mall-visit-1deaf324.md",
-      "size": 4
+      "size": 4,
+      "is_meeting": false,
+      "calendar_event_link": null
     },
     {
       "id": "2b4004c8-df35-4449-a008-3e2548e6fb26",
@@ -34,11 +38,15 @@
         "SecondSelf",
         "Personal AI Second Brain",
         "Knowledge Management",
-        "PARA Method"
+        "PARA Method",
+        "meeting",
+        "event"
       ],
       "summary": "A project to build an end-to-end system for capturing, organizing, and retrieving knowledge using the PARA method and AI.",
       "wiki_path": "wiki/Projects/secondself-your-personal-ai-second-brain-2b4004c8.md",
-      "size": 5
+      "size": 7,
+      "is_meeting": true,
+      "calendar_event_link": null
     },
     {
       "id": "2ee0c6e5-74a5-437a-8cf0-42f0bb83fa16",
@@ -47,11 +55,15 @@
       "tags": [
         "live session",
         "upcoming",
-        "schedule"
+        "schedule",
+        "meeting",
+        "event"
       ],
       "summary": "Next live session is scheduled for August 1, 2026, from 7-8pm.",
       "wiki_path": "wiki/Projects/upcoming-live-session-2ee0c6e5.md",
-      "size": 3
+      "size": 5,
+      "is_meeting": true,
+      "calendar_event_link": null
     },
     {
       "id": "50cf59d1-4328-49fa-8461-973d0f019a4d",
@@ -65,7 +77,9 @@
       ],
       "summary": "Obsolete reference material for Python 2.7 legacy syntax, deprecated since 2020.",
       "wiki_path": "wiki/Archives/python-2-7-legacy-syntax-reference-50cf59d1.md",
-      "size": 3
+      "size": 4,
+      "is_meeting": false,
+      "calendar_event_link": null
     },
     {
       "id": "7219e51d-932b-4a5e-9235-fcdb94a80843",
@@ -79,7 +93,9 @@
       ],
       "summary": "Completed project for migrating legacy servers to cloud infrastructure in Q1 2024.",
       "wiki_path": "wiki/Projects/legacy-server-migration-project-q1-2024-7219e51d.md",
-      "size": 4
+      "size": 4,
+      "is_meeting": false,
+      "calendar_event_link": null
     },
     {
       "id": "820fcf5b-0f5b-4525-9dc4-6deecf6683d7",
@@ -92,7 +108,23 @@
       ],
       "summary": "I'm currently working on the second brain project to improve my personal knowledge organization.",
       "wiki_path": "wiki/Projects/second-brain-project-820fcf5b.md",
-      "size": 5
+      "size": 5,
+      "is_meeting": false,
+      "calendar_event_link": null
+    },
+    {
+      "id": "bc02e399-b052-48c6-ab66-baed0363fd3d",
+      "label": "Python 3.12 release notes on pattern matching",
+      "category": "Resources",
+      "tags": [
+        "capture",
+        "resource"
+      ],
+      "summary": "Python 3.12 release notes on pattern matching",
+      "wiki_path": "wiki/Resources/python-3-12-release-notes-on-pattern-matching-bc02e399.md",
+      "size": 4,
+      "is_meeting": false,
+      "calendar_event_link": null
     },
     {
       "id": "c3f7a300-1ef6-4cc0-8266-6b0690f9f1e8",
@@ -105,7 +137,9 @@
       ],
       "summary": "Mukesh's GitHub profile with SecondSelf AI Personal Second Brain",
       "wiki_path": "wiki/Resources/mukesh-s-github-profile-c3f7a300.md",
-      "size": 7
+      "size": 7,
+      "is_meeting": false,
+      "calendar_event_link": null
     },
     {
       "id": "c753df2e-ff29-4142-8ffe-7bfdcfa6a4db",
@@ -119,7 +153,9 @@
       ],
       "summary": "Completed deployment milestone for the Second Brain personal knowledge-management application.",
       "wiki_path": "wiki/Archives/second-brain-deployment-c753df2e.md",
-      "size": 7
+      "size": 7,
+      "is_meeting": false,
+      "calendar_event_link": null
     },
     {
       "id": "cbf841d0-1d55-4a27-a99e-edb401ba562d",
@@ -132,7 +168,9 @@
       ],
       "summary": "My birthday is on October 25.",
       "wiki_path": "wiki/Areas/personal-dates-cbf841d0.md",
-      "size": 4
+      "size": 4,
+      "is_meeting": false,
+      "calendar_event_link": null
     },
     {
       "id": "cf0ee7b7-0acc-4198-a4ed-0f901063b218",
@@ -145,7 +183,9 @@
       ],
       "summary": "Mukesh's birthday is on 25th October.",
       "wiki_path": "wiki/Areas/mukesh-birthday-cf0ee7b7.md",
-      "size": 5
+      "size": 5,
+      "is_meeting": false,
+      "calendar_event_link": null
     },
     {
       "id": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
@@ -155,11 +195,15 @@
         "learning platform",
         "online courses",
         "live sessions",
-        "placements"
+        "placements",
+        "meeting",
+        "event"
       ],
       "summary": "A learning platform offering courses, live sessions, and placements.",
       "wiki_path": "wiki/Resources/masai-school-learning-platform-d2c0d4f9.md",
-      "size": 4
+      "size": 7,
+      "is_meeting": true,
+      "calendar_event_link": null
     },
     {
       "id": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
@@ -174,7 +218,9 @@
       ],
       "summary": "The official home of the Python Programming Language, providing documentation, downloads, and community resources.",
       "wiki_path": "wiki/Resources/python-official-website-d5f8b196.md",
-      "size": 4
+      "size": 4,
+      "is_meeting": false,
+      "calendar_event_link": null
     },
     {
       "id": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
@@ -184,11 +230,14 @@
         "RAG",
         "architecture",
         "meeting",
-        "notes"
+        "notes",
+        "event"
       ],
       "summary": "Notes from a meeting discussing the RAG architecture.",
       "wiki_path": "wiki/Projects/rag-architecture-discussion-e354b65e.md",
-      "size": 3
+      "size": 6,
+      "is_meeting": true,
+      "calendar_event_link": null
     }
   ],
   "edges": [
@@ -225,8 +274,8 @@
     {
       "source": "2b4004c8-df35-4449-a008-3e2548e6fb26",
       "target": "2ee0c6e5-74a5-437a-8cf0-42f0bb83fa16",
-      "type": "para_cluster",
-      "weight": 0.5
+      "type": "tag_similarity",
+      "weight": 0.8
     },
     {
       "source": "2b4004c8-df35-4449-a008-3e2548e6fb26",
@@ -247,10 +296,40 @@
       "weight": 0.6
     },
     {
+      "source": "2b4004c8-df35-4449-a008-3e2548e6fb26",
+      "target": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
+      "type": "tag_similarity",
+      "weight": 0.8
+    },
+    {
+      "source": "2b4004c8-df35-4449-a008-3e2548e6fb26",
+      "target": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
+      "type": "tag_similarity",
+      "weight": 0.8
+    },
+    {
       "source": "2ee0c6e5-74a5-437a-8cf0-42f0bb83fa16",
       "target": "7219e51d-932b-4a5e-9235-fcdb94a80843",
       "type": "para_cluster",
       "weight": 0.5
+    },
+    {
+      "source": "2ee0c6e5-74a5-437a-8cf0-42f0bb83fa16",
+      "target": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
+      "type": "tag_similarity",
+      "weight": 0.8
+    },
+    {
+      "source": "2ee0c6e5-74a5-437a-8cf0-42f0bb83fa16",
+      "target": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
+      "type": "tag_similarity",
+      "weight": 0.8
+    },
+    {
+      "source": "50cf59d1-4328-49fa-8461-973d0f019a4d",
+      "target": "bc02e399-b052-48c6-ab66-baed0363fd3d",
+      "type": "embedding_similarity",
+      "weight": 0.55
     },
     {
       "source": "50cf59d1-4328-49fa-8461-973d0f019a4d",
@@ -289,6 +368,18 @@
       "weight": 0.72
     },
     {
+      "source": "bc02e399-b052-48c6-ab66-baed0363fd3d",
+      "target": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
+      "type": "para_cluster",
+      "weight": 0.5
+    },
+    {
+      "source": "c3f7a300-1ef6-4cc0-8266-6b0690f9f1e8",
+      "target": "bc02e399-b052-48c6-ab66-baed0363fd3d",
+      "type": "para_cluster",
+      "weight": 0.5
+    },
+    {
       "source": "c3f7a300-1ef6-4cc0-8266-6b0690f9f1e8",
       "target": "c753df2e-ff29-4142-8ffe-7bfdcfa6a4db",
       "type": "embedding_similarity",
@@ -305,12 +396,6 @@
       "target": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
       "type": "embedding_similarity",
       "weight": 0.26
-    },
-    {
-      "source": "c3f7a300-1ef6-4cc0-8266-6b0690f9f1e8",
-      "target": "d5f8b196-bea7-4a87-93fd-d031f4e2ec14",
-      "type": "para_cluster",
-      "weight": 0.5
     },
     {
       "source": "c753df2e-ff29-4142-8ffe-7bfdcfa6a4db",
@@ -331,6 +416,12 @@
       "weight": 0.27
     },
     {
+      "source": "d2c0d4f9-af99-4ec1-8c13-4b9b64d6e9af",
+      "target": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
+      "type": "tag_similarity",
+      "weight": 0.8
+    },
+    {
       "source": "e354b65e-4ae2-44a5-b598-87cf82b7b57a",
       "target": "820fcf5b-0f5b-4525-9dc4-6deecf6683d7",
       "type": "para_cluster",
@@ -338,8 +429,8 @@
     }
   ],
   "metadata": {
-    "generated_at": "2026-08-02T16:33:18.341734Z",
-    "node_count": 14,
-    "edge_count": 24
+    "generated_at": "2026-08-05T09:55:36.612677Z",
+    "node_count": 15,
+    "edge_count": 31
   }
 }

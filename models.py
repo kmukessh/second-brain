@@ -42,10 +42,18 @@ class WikiNote:
     embedding_id: Optional[str] = None
     source_raw: Optional[str] = None
     body: str = ""
+    is_meeting: bool = False
+    calendar_event_id: Optional[str] = None
+    calendar_event_link: Optional[str] = None
+    calendar_account: Optional[str] = "mukesh"
+    calendar_event_start: Optional[str] = None
+    calendar_event_end: Optional[str] = None
+    calendar_event_status: Optional[str] = None
+    calendar_event_error: Optional[str] = None
 
     def to_frontmatter_dict(self) -> Dict[str, Any]:
         """Return dict suitable for YAML frontmatter serialization"""
-        return {
+        res = {
             "id": self.id,
             "title": self.title,
             "para_category": self.para_category,
@@ -56,7 +64,23 @@ class WikiNote:
             "links": self.links,
             "embedding_id": self.embedding_id,
             "source_raw": self.source_raw,
+            "is_meeting": self.is_meeting,
         }
+        if self.calendar_event_id:
+            res["calendar_event_id"] = self.calendar_event_id
+        if self.calendar_event_link:
+            res["calendar_event_link"] = self.calendar_event_link
+        if self.calendar_account:
+            res["calendar_account"] = self.calendar_account
+        if self.calendar_event_start:
+            res["calendar_event_start"] = self.calendar_event_start
+        if self.calendar_event_end:
+            res["calendar_event_end"] = self.calendar_event_end
+        if self.calendar_event_status:
+            res["calendar_event_status"] = self.calendar_event_status
+        if self.calendar_event_error:
+            res["calendar_event_error"] = self.calendar_event_error
+        return res
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any], body: str = "") -> "WikiNote":
@@ -72,7 +96,16 @@ class WikiNote:
             embedding_id=data.get("embedding_id"),
             source_raw=data.get("source_raw"),
             body=body,
+            is_meeting=bool(data.get("is_meeting", False)),
+            calendar_event_id=data.get("calendar_event_id"),
+            calendar_event_link=data.get("calendar_event_link"),
+            calendar_account=data.get("calendar_account", "mukesh"),
+            calendar_event_start=data.get("calendar_event_start"),
+            calendar_event_end=data.get("calendar_event_end"),
+            calendar_event_status=data.get("calendar_event_status"),
+            calendar_event_error=data.get("calendar_event_error"),
         )
+
 
 
 @dataclass
@@ -85,9 +118,12 @@ class GraphNode:
     summary: str = ""
     wiki_path: str = ""
     size: int = 1
+    is_meeting: bool = False
+    calendar_event_link: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
 
 
 @dataclass
@@ -125,3 +161,47 @@ class AskResponse:
             "answer": self.answer,
             "sources": [source.to_dict() for source in self.sources],
         }
+
+
+@dataclass
+class CalendarEvent:
+    """Schema for Google Calendar Event representation."""
+    id: str
+    summary: str
+    start_time: str
+    end_time: str
+    description: Optional[str] = ""
+    location: Optional[str] = ""
+    attendees: List[str] = field(default_factory=list)
+    html_link: Optional[str] = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "CalendarEvent":
+        start = data.get("start", {})
+        end = data.get("end", {})
+        start_str = start.get("dateTime", start.get("date", data.get("start_time", ""))) if isinstance(start, dict) else str(start)
+        end_str = end.get("dateTime", end.get("date", data.get("end_time", ""))) if isinstance(end, dict) else str(end)
+
+        attendees_raw = data.get("attendees", [])
+        attendees_list = []
+        if isinstance(attendees_raw, list):
+            for a in attendees_raw:
+                if isinstance(a, dict) and "email" in a:
+                    attendees_list.append(a["email"])
+                elif isinstance(a, str):
+                    attendees_list.append(a)
+
+        return cls(
+            id=data.get("id", ""),
+            summary=data.get("summary", "Untitled Event"),
+            start_time=start_str,
+            end_time=end_str,
+            description=data.get("description", ""),
+            location=data.get("location", ""),
+            attendees=attendees_list,
+            html_link=data.get("htmlLink", data.get("html_link", "")),
+        )
+

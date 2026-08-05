@@ -133,6 +133,8 @@ def transcribe_audio(audio_path: Path, model_name: Optional[str] = None) -> Dict
         try:
             model = whisper.load_model(model_name)
             result = model.transcribe(str(audio_path))
+            text = str(result.get("text", "")).strip()
+            language = str(result.get("language", "en"))
             root_dir = getattr(config, "ROOT", Path(__file__).parent.resolve())
             rel_audio_path = str(audio_path.relative_to(root_dir)) if audio_path.is_relative_to(root_dir) else str(audio_path)
             return {

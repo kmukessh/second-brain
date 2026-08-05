@@ -39,21 +39,29 @@ def load_embedding_index(embeddings_path: Path = config.DATA_DIR / "embeddings.p
         return {}
 
 
-def load_embedding_model() -> Any:
-    """Load sentence-transformers model on demand (cached when running in Streamlit)."""
+_GLOBAL_EMBEDDING_MODEL: Any = None
+
+
+def load_embedding_model(force_fresh: bool = False) -> Any:
+    """Load sentence-transformers model on demand with process-level singleton and local files preference."""
+    global _GLOBAL_EMBEDDING_MODEL
+    if not force_fresh and _GLOBAL_EMBEDDING_MODEL is not None:
+        return _GLOBAL_EMBEDDING_MODEL
+
+    import os
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
     try:
-        import streamlit as st
-        @st.cache_resource(show_spinner=False)
-        def _get_cached_model(model_name: str):
-            from sentence_transformers import SentenceTransformer
-            return SentenceTransformer(model_name)
-        return _get_cached_model(config.EMBEDDING_MODEL)
-    except Exception:
+        from sentence_transformers import SentenceTransformer
         try:
-            from sentence_transformers import SentenceTransformer
-        except ImportError as exc:
-            raise RuntimeError("sentence-transformers is not installed. Run: pip install -r requirements.txt") from exc
-        return SentenceTransformer(config.EMBEDDING_MODEL)
+            model_inst = SentenceTransformer(config.EMBEDDING_MODEL, local_files_only=True)
+        except Exception:
+            model_inst = SentenceTransformer(config.EMBEDDING_MODEL)
+        
+        _GLOBAL_EMBEDDING_MODEL = model_inst
+        return _GLOBAL_EMBEDDING_MODEL
+    except ImportError as exc:
+        raise RuntimeError("sentence-transformers is not installed. Run: pip install -r requirements.txt") from exc
 
 
 def normalize_vector(vec: Any) -> np.ndarray:
@@ -125,6 +133,7 @@ def ask(
     client: Optional[Groq] = None,
 ) -> AskResponse:
     """RAG Q&A query over SecondSelf wiki notes."""
+    global _GLOBAL_EMBEDDING_MODEL
     question = question.strip()
     if not question:
         return AskResponse(answer="Please provide a non-empty question.", sources=[])
@@ -143,15 +152,22 @@ def ask(
             sources=[],
         )
 
-    # Embed query
+    # Embed query with recovery for closed clients
     try:
-        model = model or load_embedding_model()
-        query_vector = model.encode(question, convert_to_numpy=True, show_progress_bar=False)
+        model_instance = model or load_embedding_model()
+        query_vector = model_instance.encode(question, convert_to_numpy=True, show_progress_bar=False)
     except Exception as exc:
-        return AskResponse(
-            answer=f"[ERROR] Could not compute question embedding: {exc}",
-            sources=[],
-        )
+        try:
+            _GLOBAL_EMBEDDING_MODEL = None
+            fresh_model = load_embedding_model(force_fresh=True)
+            query_vector = fresh_model.encode(question, convert_to_numpy=True, show_progress_bar=False)
+        except Exception as retry_exc:
+            return AskResponse(
+                answer=f"[ERROR] Could not compute question embedding: {retry_exc}",
+                sources=[],
+            )
+
+
 
     # Retrieve relevant notes
     relevant = retrieve_relevant_notes(query_vector, index, top_k=top_k, min_similarity=min_similarity)
@@ -196,9 +212,14 @@ def ask(
 
     system_prompt = (
         "You are SecondSelf, an intelligent second brain assistant.\n"
-        "Answer the user's question strictly and ONLY using the provided source notes below.\n"
-        "Do not hallucinate or use outside knowledge. Cite sources clearly (e.g. Source [1] or [Title]).\n"
-        "If the answer cannot be deduced from the provided notes, respond strictly: "
+        "Answer the user's question strictly and ONLY using the provided source notes below.\n\n"
+        "FORMATTING & DISPLAY RULES:\n"
+        "1. Always format lists, schedules, and multi-item answers line-by-line using clean Markdown bullet points.\n"
+        "2. Put EVERY schedule, meeting, or list item on its OWN separate line with a clean line break.\n"
+        "3. For schedules/events, format each line like: `- 📅 **Date/Time**: Event Title (Source [X])`.\n"
+        "4. NEVER collapse list items or schedules into a single paragraph or inline text block.\n"
+        "5. Do not hallucinate or use outside knowledge. Cite sources clearly (e.g. Source [1]).\n"
+        "6. If the answer cannot be deduced from the provided notes, respond strictly: "
         "\"I don't have information on this in your Second Brain.\""
     )
 

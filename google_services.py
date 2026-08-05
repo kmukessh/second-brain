@@ -86,8 +86,13 @@ class GoogleServiceManager:
         if not creds or not creds.valid:
             if self.has_client_secrets():
                 try:
-                    flow = InstalledAppFlow.from_client_secrets_file(str(self.client_secret_file), self.scopes)
-                    creds = flow.run_local_server(port=0)
+                    import os
+                    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+                    flow = InstalledAppFlow.from_client_secrets_file(str(self.client_secret_file), self.scopes, redirect_uri="http://localhost:8080/")
+                    creds = flow.run_local_server(host="localhost", port=8080, open_browser=True, prompt="consent")
+
+
+
                     # Persist token for future runs
                     self.token_file.parent.mkdir(parents=True, exist_ok=True)
                     self.token_file.write_text(creds.to_json(), encoding="utf-8")
@@ -97,22 +102,36 @@ class GoogleServiceManager:
             else:
                 return None
 
+
         self._credentials = creds
         return creds
 
     def get_calendar_service(self) -> Optional[Any]:
         """Build and return Google Calendar API (v3) client."""
-        if self._calendar_service:
-            return self._calendar_service
         creds = self.get_credentials()
-        if not creds:
-            return None
-        try:
-            self._calendar_service = build("calendar", "v3", credentials=creds)
-            return self._calendar_service
-        except Exception as exc:
-            print(f"[ERROR] GGL-04: Failed to build Calendar service: {exc}")
-            return None
+        if creds and creds.valid:
+            if self._calendar_service and getattr(self, "_is_oauth_service", False):
+                return self._calendar_service
+            try:
+                self._calendar_service = build("calendar", "v3", credentials=creds)
+                self._is_oauth_service = True
+                return self._calendar_service
+            except Exception as exc:
+                print(f"[WARNING] GGL-04: Failed to build Calendar service with credentials: {exc}")
+
+        # Fallback to API key for read-only access (not cached as OAuth service)
+        api_key = getattr(config, "GOOGLE_API_KEY", "")
+        if api_key and self.is_library_installed():
+            try:
+                service = build("calendar", "v3", developerKey=api_key)
+                return service
+            except Exception as exc:
+                print(f"[ERROR] GGL-04b: Failed to build Calendar service with API key: {exc}")
+                return None
+
+        return None
+
+
 
     def get_gmail_service(self) -> Optional[Any]:
         """Build and return Gmail API (v1) client."""

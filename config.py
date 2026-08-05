@@ -60,6 +60,12 @@ GOOGLE_SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/tasks",
 ]
+DEFAULT_GOOGLE_ACCOUNT = _get_config("DEFAULT_GOOGLE_ACCOUNT", "mukesh")
+
+GOOGLE_API_KEY = _get_config("GOOGLE_API_KEY", "AIzaSyCMKFPoA2setiR4ACWkPSZ1KjDVjKp8mnM")
+
+
+
 
 
 def __getattr__(name: str) -> Any:

@@ -93,6 +93,9 @@ def parse_wiki_notes(wiki_dir: Path) -> Tuple[Dict[str, Dict[str, Any]], Dict[st
             frontmatter_links = []
         frontmatter_links = [str(l).strip() for l in frontmatter_links if str(l).strip()]
 
+        is_meeting = bool(post.get("is_meeting")) or "meeting" in [t.lower() for t in tags] or "event" in [t.lower() for t in tags]
+        cal_link = post.get("calendar_event_link")
+
         notes_by_id[note_id] = {
             "id": note_id,
             "title": title,
@@ -103,7 +106,10 @@ def parse_wiki_notes(wiki_dir: Path) -> Tuple[Dict[str, Dict[str, Any]], Dict[st
             "frontmatter_links": frontmatter_links,
             "content": post.content,
             "path": path,
+            "is_meeting": is_meeting,
+            "calendar_event_link": cal_link,
         }
+
 
         # Index note_id and lookups
         id_lookup[note_id.casefold()] = note_id
@@ -298,8 +304,11 @@ def build_graph(
                 summary=note["summary"],
                 wiki_path=note["wiki_path"],
                 size=node_size,
+                is_meeting=note.get("is_meeting", False),
+                calendar_event_link=note.get("calendar_event_link"),
             )
         )
+
 
     metadata = {
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),

@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""SecondSelf Streamlit App (Weeks 3.2 + 4)
-
-Unified UI providing:
-1. 🧠 Interactive force-directed Knowledge Graph visualization (vis-network)
-2. 💬 RAG Q&A Search bar over personal wiki notes
-3. 📊 Sidebar stats, PARA breakdown, and Rebuild Graph controls
-"""
 
 import html
 import json
@@ -18,16 +11,220 @@ import streamlit.components.v1 as components
 import importlib
 import config
 import voice
+import models
+import ask
+import calendar_service
 importlib.reload(config)
 importlib.reload(voice)
+importlib.reload(models)
+importlib.reload(ask)
+importlib.reload(calendar_service)
 
 from ask import ask
-from models import AskResponse
+from models import AskResponse, CalendarEvent
 from build_graph import build_graph
 from capture import capture_note, capture_url, capture_file
 from classify import classify_all_unprocessed
 from link import load_wiki_notes, link_notes
 from voice import save_audio_file, transcribe_audio
+from calendar_service import (
+    create_event,
+    delete_event,
+    get_today_events,
+    get_upcoming_events,
+    parse_and_execute_calendar_request,
+    is_schedulable_event,
+    format_google_calendar_template_url,
+    parse_datetime_string,
+)
+
+import frontmatter
+from google_services import google_service_manager
+
+
+
+
+
+def get_all_calendar_events_and_meetings():
+    events = []
+    seen_summaries = set()
+
+    # Pre-build lookup of wiki notes by calendar_event_id and title
+    wiki_notes_map = {}
+    for wiki_file in config.WIKI_DIR.glob("*/*.md"):
+        if wiki_file.name.startswith("."):
+            continue
+        try:
+            post = frontmatter.load(wiki_file)
+            rel_p = str(wiki_file.relative_to(config.ROOT))
+            t = str(post.get("title", wiki_file.stem)).strip()
+            cid = post.get("calendar_event_id")
+            if cid:
+                wiki_notes_map[str(cid)] = rel_p
+            if t:
+                wiki_notes_map[t.lower()] = rel_p
+        except Exception:
+            continue
+
+    # 1. Google Calendar events (today + upcoming)
+    try:
+        t_events = get_today_events()
+        for ev in t_events:
+            summary = ev.get("summary", "Event")
+            seen_summaries.add(summary.lower())
+            ev["source"] = "Google Calendar"
+            ev["account"] = ev.get("account") or config.DEFAULT_GOOGLE_ACCOUNT
+            ev["reminder_set"] = True
+            ev_id = ev.get("id") or ""
+            ev["wiki_path"] = wiki_notes_map.get(str(ev_id)) or wiki_notes_map.get(summary.lower()) or ""
+            events.append(ev)
+    except Exception:
+        pass
+
+    try:
+        u_events = get_upcoming_events(max_results=15, days=14)
+        for ev in u_events:
+            summary = ev.get("summary", "Event")
+            if summary.lower() not in seen_summaries:
+                seen_summaries.add(summary.lower())
+                ev["source"] = "Google Calendar"
+                ev["account"] = ev.get("account") or config.DEFAULT_GOOGLE_ACCOUNT
+                ev["reminder_set"] = True
+                ev_id = ev.get("id") or ""
+                ev["wiki_path"] = wiki_notes_map.get(str(ev_id)) or wiki_notes_map.get(summary.lower()) or ""
+                events.append(ev)
+    except Exception:
+        pass
+
+    # 2. Captured meeting notes in wiki (only today or future scheduled events)
+    for wiki_file in config.WIKI_DIR.glob("*/*.md"):
+        if wiki_file.name.startswith("."):
+            continue
+        try:
+            post = frontmatter.load(wiki_file)
+            title = str(post.get("title", wiki_file.stem)).strip()
+            summary = str(post.get("summary", "")).strip()
+            body = post.content
+            
+            text_check = f"{title} {summary} {body}"
+            is_schedulable, _, start_dt, _ = is_schedulable_event(text_check)
+
+            is_meeting_note = bool(post.get("is_meeting")) or bool(post.get("calendar_event_link")) or bool(post.get("calendar_event_start")) or is_schedulable
+            status = post.get("calendar_event_status")
+
+            if is_meeting_note and status != "deleted":
+                if title.lower() not in seen_summaries:
+                    seen_summaries.add(title.lower())
+                    cal_link = post.get("calendar_event_link") or format_google_calendar_template_url(summary=title, start_dt=start_dt, description=summary)
+                    events.append({
+                        "id": post.get("calendar_event_id") or "",
+                        "summary": title,
+                        "start_time": post.get("calendar_event_start") or start_dt.strftime("%Y-%m-%d %H:%M"),
+                        "end_time": post.get("calendar_event_end") or "",
+                        "location": post.get("location", ""),
+                        "description": summary,
+                        "html_link": cal_link,
+                        "account": post.get("calendar_account", config.DEFAULT_GOOGLE_ACCOUNT),
+                        "wiki_path": str(wiki_file.relative_to(config.ROOT)),
+                        "reminder_set": True,
+                        "source": "Captured Event",
+                    })
+
+        except Exception:
+            continue
+
+    return events
+
+
+def format_event_time_range(st_time: str, end_time: str = "") -> str:
+    """Format raw ISO or datetime strings into clean, user-friendly readable date & time with spacing."""
+    if not st_time:
+        return ""
+    try:
+        dt_start = parse_datetime_string(st_time)
+        date_str = dt_start.strftime("%b %d, %Y")
+        time_str = dt_start.strftime("%I:%M %p")
+
+        if end_time:
+            try:
+                dt_end = parse_datetime_string(end_time)
+                if dt_end.date() == dt_start.date():
+                    end_time_str = dt_end.strftime("%I:%M %p")
+                    return f"📅 <b>Date:</b> {date_str} &nbsp;&nbsp;|&nbsp;&nbsp; ⏰ <b>Time:</b> {time_str} – {end_time_str}"
+                else:
+                    end_date_str = dt_end.strftime("%b %d, %Y")
+                    end_time_str = dt_end.strftime("%I:%M %p")
+                    return f"📅 <b>Start:</b> {date_str} at {time_str} &nbsp;&nbsp;→&nbsp;&nbsp; <b>End:</b> {end_date_str} at {end_time_str}"
+            except Exception:
+                pass
+
+        return f"📅 <b>Date:</b> {date_str} &nbsp;&nbsp;|&nbsp;&nbsp; ⏰ <b>Time:</b> {time_str}"
+    except Exception:
+        clean_start = str(st_time).replace("T", " ").strip()
+        clean_end = str(end_time).replace("T", " ").strip() if end_time else ""
+        return f"⏰ <b>Date & Time:</b> {clean_start}" + (f" &nbsp;→&nbsp; {clean_end}" if clean_end else "")
+
+
+def remove_calendar_event_or_schedule(ev: dict) -> str:
+    """Delete event from Google Calendar (if ID present) and/or remove schedule metadata from linked Markdown note."""
+    msg_parts = []
+    
+    # 1. Delete from Google Calendar if event ID is present
+    event_id = ev.get("id") or ev.get("calendar_event_id")
+    if event_id and not str(event_id).startswith("evt-"):
+        try:
+            res = delete_event(event_id)
+            if res.get("status") == "success":
+                msg_parts.append("Removed from Google Calendar")
+            else:
+                msg_parts.append(f"Calendar notice: {res.get('message')}")
+        except Exception as exc:
+            msg_parts.append(f"Calendar error: {exc}")
+    elif event_id:
+        msg_parts.append("Removed local schedule")
+
+    # 2. Update linked wiki note if wiki_path or matching title exists
+    wiki_p = ev.get("wiki_path")
+    target_notes = []
+    if wiki_p:
+        np = config.ROOT / wiki_p
+        if np.exists():
+            target_notes.append(np)
+    
+    summary_lower = str(ev.get("summary", "")).strip().lower()
+    for wf in config.WIKI_DIR.glob("*/*.md"):
+        if wf in target_notes:
+            continue
+        try:
+            p = frontmatter.load(wf)
+            if (event_id and p.get("calendar_event_id") == event_id) or (summary_lower and str(p.get("title", "")).strip().lower() == summary_lower):
+                target_notes.append(wf)
+        except Exception:
+            continue
+
+    for np in target_notes:
+        try:
+            post = frontmatter.load(np)
+            post.metadata["is_meeting"] = False
+            post.metadata["calendar_event_status"] = "deleted"
+            for k in ["calendar_event_id", "calendar_event_link", "calendar_event_start", "calendar_event_end"]:
+                if k in post.metadata:
+                    del post.metadata[k]
+            np.write_text(frontmatter.dumps(post), encoding="utf-8")
+            msg_parts.append(f"Updated note `{np.name}`")
+        except Exception as exc:
+            msg_parts.append(f"Note update error: {exc}")
+
+    # 3. Rebuild knowledge graph
+    try:
+        build_graph()
+    except Exception:
+        pass
+
+    if not msg_parts:
+        msg_parts.append("Event schedule deleted")
+
+    return " | ".join(msg_parts)
 
 
 def process_new_captures():
@@ -37,6 +234,7 @@ def process_new_captures():
     if notes:
         link_notes(notes)
     build_graph()
+
 
 
 # Page configuration
@@ -685,8 +883,14 @@ def main():
                         with st.spinner("Capturing & classifying note..."):
                             capture_note(note_input)
                             process_new_captures()
-                        st.toast("✨ Note captured, classified & graph updated!", icon="🎉")
+                        
+                        is_sched, title_sch, dt_sch, _ = is_schedulable_event(note_input)
+                        if is_sched:
+                            st.toast(f"📅 Meeting sent to Google Calendar for {dt_sch.strftime('%b %d at %I:%M %p')}.", icon="🔔")
+                        else:
+                            st.toast("✨ Note captured, classified & graph updated!", icon="🎉")
                         st.rerun()
+
                     except ValueError as exc:
                         st.warning(f"⚠️ {exc}")
 
@@ -798,9 +1002,15 @@ def main():
                         with st.spinner("Capturing & classifying voice note..."):
                             capture_note(edited_transcript)
                             process_new_captures()
+                        
+                        is_sched, title_sch, dt_sch, _ = is_schedulable_event(edited_transcript)
                         st.session_state["voice_transcript"] = ""
                         st.session_state["recorded_audio_bytes"] = None
-                        st.toast("✨ Voice note captured, classified & graph updated!", icon="🎉")
+
+                        if is_sched:
+                            st.toast(f"📅 Spoken meeting scheduled & reminder set on Google Calendar for {dt_sch.strftime('%b %d at %I:%M %p')}!", icon="🔔")
+                        else:
+                            st.toast("✨ Voice note captured, classified & graph updated!", icon="🎉")
                         st.rerun()
                     except ValueError as exc:
                         st.warning(f"⚠️ {exc}")
@@ -853,6 +1063,25 @@ def main():
                 st.rerun()
 
         st.divider()
+        st.header("📅 Google Calendar Sync")
+        if google_service_manager.is_authenticated():
+            st.success("✅ Live Google Calendar OAuth Connected")
+        elif google_service_manager.has_client_secrets():
+            st.info("🔑 `client_secret.json` detected!")
+            if st.button("🔐 Authorize Google Account", use_container_width=True):
+                with st.spinner("Opening browser to authorize Google Calendar account..."):
+                    try:
+                        creds = google_service_manager.get_credentials()
+                        if creds and creds.valid:
+                            st.success("🎉 Google Calendar authenticated!")
+                            st.rerun()
+                    except Exception as exc:
+                        st.error(f"Auth error: {exc}")
+        else:
+            st.caption("Place `client_secret.json` in `credentials/` folder to enable direct OAuth sync.")
+
+        st.divider()
+
         st.header("📊 Knowledge Stats")
         col_s1, col_s2 = st.columns(2)
         col_s1.metric("Notes", len(nodes))
@@ -896,12 +1125,78 @@ def main():
     st.caption("Quick Queries:")
     q_cols = st.columns(3)
     query_input = ""
+
+    if "show_events" not in st.session_state:
+        st.session_state["show_events"] = False
+
     if q_cols[0].button("🚀 Projects", use_container_width=True):
         query_input = "What projects am I currently working on?"
+        st.session_state["show_events"] = False
     if q_cols[1].button("🤖 RAG Notes", use_container_width=True):
         query_input = "What did I capture about RAG architecture?"
-    if q_cols[2].button("🐍 Python", use_container_width=True):
-        query_input = "What resources do I have about Python?"
+        st.session_state["show_events"] = False
+    if q_cols[2].button("📅 Events", use_container_width=True):
+        st.session_state["show_events"] = not st.session_state.get("show_events", False)
+
+    if st.session_state.get("show_events"):
+        with st.spinner("Fetching Google Calendar events & linked meeting reminders..."):
+            all_events = get_all_calendar_events_and_meetings()
+            st.markdown("### 📅 Google Calendar Events & Linked Meetings")
+            if all_events:
+                st.success(f"Found {len(all_events)} event(s) & meeting reminder(s) for {config.DEFAULT_GOOGLE_ACCOUNT}:")
+                for idx, ev in enumerate(all_events):
+                    summary = ev.get("summary", "Event")
+                    st_time = ev.get("start_time", "")
+                    end_time = ev.get("end_time", "")
+                    loc = ev.get("location", "")
+                    desc = ev.get("description", "")
+                    acc = ev.get("account", config.DEFAULT_GOOGLE_ACCOUNT)
+                    raw_link = ev.get("html_link", "")
+                    ev_id = ev.get("id") or ev.get("calendar_event_id") or f"ev_{idx}"
+                    wiki_p = ev.get("wiki_path", "")
+
+                    if raw_link and "action=TEMPLATE" in raw_link:
+                        link = raw_link
+                    else:
+                        st_dt = parse_datetime_string(st_time)
+                        link = format_google_calendar_template_url(summary=summary, start_dt=st_dt, description=desc, location=loc)
+
+                    card_col, btn_col = st.columns([4, 1])
+                    with card_col:
+                        desc_html = f"<br/>📝 <b>Description:</b> {desc}" if desc else ""
+                        formatted_time = format_event_time_range(st_time, end_time)
+                        time_html = f"<br/>{formatted_time}" if formatted_time else ""
+                        loc_html = f"<br/>📍 <b>Location:</b> {loc}" if loc else ""
+                        wiki_html = f"<br/>📄 <b>Linked SecondSelf Note:</b> <code>{wiki_p}</code>" if wiki_p else ""
+
+                        st.markdown(
+                            f'<div class="card" style="border-left: 4px solid #3b82f6; margin-bottom: 12px; padding: 14px;">'
+                            f'<div style="display: flex; justify-content: space-between; align-items: flex-start;">'
+                            f'<div>'
+                            f'<h4 style="margin: 0 0 6px 0; color: #ffffff; font-size: 1.15rem; font-weight: 700;">📅 {summary}</h4>'
+                            f'<span style="background-color: #dbeafe; color: #1e40af; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">📧 Account: {acc}</span> '
+                            f'<span style="background-color: #dcfce7; color: #166534; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">🔔 Reminder Active (Automatic Sync)</span>'
+                            f'{desc_html}'
+                            f'{time_html}'
+                            f'{loc_html}'
+                            f'{wiki_html}'
+                            f'</div>'
+                            f'</div>'
+                            f'</div>',
+                            unsafe_allow_html=True,
+                        )
+
+                    with btn_col:
+                        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+                        if st.button("Delete", key=f"btn_del_ev_{idx}_{ev_id}", use_container_width=True):
+                            with st.spinner("Deleting event..."):
+                                res_msg = remove_calendar_event_or_schedule(ev)
+                            st.toast(f"Deleted event '{summary}'", icon="✅")
+                            st.rerun()
+
+            else:
+                st.info("No calendar events or meetings found.")
+
 
     user_query = st.text_input(
         "Search or ask a question across your SecondSelf knowledge base:",
@@ -939,10 +1234,7 @@ def main():
                 response = ask(user_query)
 
         st.markdown("### 💡 Answer")
-        st.markdown(
-            f'<div class="card">{response.answer}</div>',
-            unsafe_allow_html=True,
-        )
+        st.markdown(response.answer)
 
         # Always show Last 3 Recent Questions History under the answer if available
         all_history = st.session_state.get("recent_questions", [])[:3]
@@ -960,6 +1252,45 @@ def main():
                     st.write(f"**Relevance Score:** `{src.score:.2%}`")
                     st.write(f"**Note ID:** `{src.id}`")
 
+                    # Display linked Google Calendar Event & Reminder if meeting
+                    try:
+                        p = config.ROOT / src.wiki_path
+                        if p.exists():
+                            fm = frontmatter.load(p)
+                            if (fm.get("is_meeting") or fm.get("calendar_event_link")) and fm.get("calendar_event_status") != "deleted":
+                                cal_link = fm.get("calendar_event_link")
+                                acc = fm.get("calendar_account", config.DEFAULT_GOOGLE_ACCOUNT)
+                                src_col1, src_col2 = st.columns([3, 1])
+                                with src_col1:
+                                    st.markdown(
+                                        f'<div style="background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 10px 14px; border-radius: 8px; margin-top: 10px;">'
+                                        f'<div style="display: flex; justify-content: space-between; align-items: center;">'
+                                        f'<div>'
+                                        f'<b>📅 Linked Google Calendar Event & Reminder</b><br/>'
+                                        f'<span style="color: #1e40af; font-size: 0.85rem;">📧 Account: <b>{acc}</b></span> | '
+                                        f'<span style="color: #166534; font-size: 0.85rem;">🔔 Status: <b>Reminder Active (30m & 10m popup, 1h email)</b></span>'
+                                        f'</div>'
+                                        f'</div>'
+                                        f'</div>',
+                                        unsafe_allow_html=True,
+                                    )
+                                with src_col2:
+                                    st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+                                    if st.button("Delete", key=f"del_src_sch_{src.id}", use_container_width=True):
+                                        with st.spinner("Deleting schedule..."):
+                                            ev_dict = {
+                                                "id": fm.get("calendar_event_id") or "",
+                                                "summary": src.title,
+                                                "wiki_path": src.wiki_path,
+                                            }
+                                            res_msg = remove_calendar_event_or_schedule(ev_dict)
+                                        st.toast(f"Deleted schedule for '{src.title}'", icon="✅")
+                                        st.rerun()
+
+                    except Exception:
+                        pass
+
+
     st.divider()
 
     # Section 2: Landscape Knowledge Graph below Search
@@ -974,3 +1305,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

@@ -50,6 +50,17 @@ def run_ask(question: str) -> int:
     return res.returncode
 
 
+def run_calendar(query_or_flag: str) -> int:
+    """Run calendar_service.py for Google Calendar operations."""
+    if query_or_flag in ["--today", "today"]:
+        res = subprocess.run([sys.executable, "calendar_service.py", "--today"])
+    elif query_or_flag in ["--upcoming", "upcoming"]:
+        res = subprocess.run([sys.executable, "calendar_service.py", "--upcoming"])
+    else:
+        res = subprocess.run([sys.executable, "calendar_service.py", "--query", query_or_flag])
+    return res.returncode
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="SecondSelf Pipeline Orchestrator")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -60,6 +71,9 @@ def main() -> int:
     ask_parser = subparsers.add_parser("ask", help="Query your Second Brain using RAG Q&A")
     ask_parser.add_argument("question", help="Question text")
 
+    cal_parser = subparsers.add_parser("calendar", help="Manage Google Calendar events using natural language")
+    cal_parser.add_argument("request", help="Calendar command (e.g. 'Schedule interview Monday at 10 AM', 'today', 'upcoming')")
+
     args = parser.parse_args()
 
     if args.command == "ingest":
@@ -68,8 +82,11 @@ def main() -> int:
         return run_graph()
     elif args.command == "ask":
         return run_ask(args.question)
+    elif args.command == "calendar":
+        return run_calendar(args.request)
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

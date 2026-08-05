@@ -83,7 +83,10 @@ def _json_from_response(content: str) -> dict[str, Any]:
     return parsed
 
 
-def _normalise_classification(data: dict[str, Any]) -> dict[str, Any]:
+from calendar_service import create_event as create_calendar_event, is_schedulable_event
+
+
+def _normalise_classification(data: dict[str, Any], body: str = "") -> dict[str, Any]:
     category = str(data.get("para_category", "")).strip().title()
     if category not in PARA_CATEGORIES:
         raise ValueError(f"Invalid PARA category '{data.get('para_category')}'")
@@ -100,13 +103,32 @@ def _normalise_classification(data: dict[str, Any]) -> dict[str, Any]:
         cleaned = re.sub(r"\s+", " ", str(tag).strip().lstrip("#"))
         if cleaned and cleaned.lower() not in {item.lower() for item in tags}:
             tags.append(cleaned)
-    if not 2 <= len(tags) <= 5:
-        raise ValueError("Classification must contain 2 to 5 distinct tags")
 
     summary = re.sub(r"\s+", " ", str(data.get("summary", "")).strip())
     if not summary:
         raise ValueError("Classification summary cannot be empty")
-    return {"para_category": category, "title": title, "tags": tags, "summary": summary}
+
+    # Detect if content contains explicit schedule intent for today or future date
+    text_check = f"{title} {summary} {body}"
+    is_schedulable, _, _, _ = is_schedulable_event(text_check)
+
+    if is_schedulable:
+        for t in ["meeting", "event", "scheduled"]:
+            if t not in [x.lower() for x in tags]:
+                tags.append(t)
+
+    if not 2 <= len(tags) <= 6:
+        if len(tags) < 2:
+            tags.extend(["capture", "note"])
+        tags = tags[:6]
+
+    return {
+        "para_category": category,
+        "title": title,
+        "tags": tags,
+        "summary": summary,
+        "is_meeting": is_schedulable,
+    }
 
 
 def call_llm_classify(content: str, client: Groq | None = None) -> dict[str, Any]:
@@ -133,7 +155,7 @@ Capture:
     content_response = response.choices[0].message.content
     if not content_response:
         raise ValueError("Model returned an empty classification")
-    return _normalise_classification(_json_from_response(content_response))
+    return _normalise_classification(_json_from_response(content_response), body=content)
 
 
 def slugify(value: str) -> str:
@@ -147,6 +169,49 @@ def write_wiki_note(metadata: CaptureMetadata, classification: dict[str, Any], b
     """Write a Markdown note with YAML frontmatter into its PARA directory."""
     note_id = metadata.id.split("-")[0]
     timestamp = datetime.now().astimezone().isoformat()
+    
+    text_check = f"{body}\n{classification.get('title', '')}\n{classification.get('summary', '')}"
+    is_schedulable, summary_title, start_dt, reason = is_schedulable_event(text_check)
+    
+    cal_event_id = None
+    cal_event_link = None
+    cal_account = config.DEFAULT_GOOGLE_ACCOUNT
+    cal_start = None
+    cal_end = None
+    cal_status = None
+    cal_error = None
+
+    # Automatically schedule Google Calendar event and reminder ONLY if it contains schedule intent AND is today/future
+    if is_schedulable:
+        try:
+            event_title = summary_title if summary_title and len(summary_title) >= 3 else classification["title"]
+            cal_res = create_calendar_event(
+                summary=event_title,
+                start_time=start_dt,
+                description=f"{classification['summary']}\n\nCaptured from SecondSelf: {metadata.raw_file or ''}",
+                target_account=cal_account,
+            )
+            cal_status = cal_res.get("status")
+            evt = cal_res.get("event", {})
+            if evt:
+                cal_event_id = evt.get("id")
+                cal_event_link = evt.get("html_link")
+                cal_start = evt.get("start_time")
+                cal_end = evt.get("end_time")
+            if cal_status in ("success", "preview"):
+                print(f"[SUCCESS] Scheduled Google Calendar event & reminder for '{event_title}' ({cal_account})")
+            else:
+                cal_status = "failed"
+                cal_error = str(cal_res.get("error") or cal_res.get("message") or "Google Calendar did not create the event.")
+                print(f"[WARNING] CLS-CAL: Calendar event was not created: {cal_error}", file=sys.stderr)
+        except Exception as exc:
+            cal_status = "failed"
+            cal_error = str(exc)
+            print(f"[WARNING] CLS-CAL: Could not create calendar event ({exc})", file=sys.stderr)
+    else:
+        print(f"[INFO] CLS-CAL: Skipping calendar scheduling ({reason})")
+
+
     wiki_note = WikiNote(
         id=metadata.id,
         title=classification["title"],
@@ -157,12 +222,21 @@ def write_wiki_note(metadata: CaptureMetadata, classification: dict[str, Any], b
         updated_at=timestamp,
         source_raw=metadata.raw_file,
         body=body,
+        is_meeting=is_schedulable,
+        calendar_event_id=cal_event_id,
+        calendar_event_link=cal_event_link,
+        calendar_account=cal_account if is_schedulable else None,
+        calendar_event_start=cal_start,
+        calendar_event_end=cal_end,
+        calendar_event_status=cal_status,
+        calendar_event_error=cal_error,
     )
     destination = config.WIKI_DIR / wiki_note.para_category / f"{slugify(wiki_note.title)}-{note_id}.md"
     destination.parent.mkdir(parents=True, exist_ok=True)
     post = frontmatter.Post(wiki_note.body, **wiki_note.to_frontmatter_dict())
     destination.write_text(frontmatter.dumps(post), encoding="utf-8")
     return destination
+
 
 
 def mark_raw_processed(meta_path: Path, metadata: CaptureMetadata, wiki_path: Path) -> None:
@@ -187,11 +261,18 @@ def fallback_classify(body: str) -> dict[str, Any]:
     first_line = lines[0] if lines else "Captured Note"
     clean_title = re.sub(r"^#+\s*", "", first_line).strip()[:60] or "Captured Note"
     summary = body[:150].replace("\n", " ").strip() or "Captured knowledge note."
+    text_check = f"{clean_title} {summary} {body}".lower()
+    meeting_kws = ["meeting", "interview", "session", "schedule", "call", "appointment", "live session"]
+    is_meeting = any(kw in text_check for kw in meeting_kws)
+    tags = ["capture", "resource"]
+    if is_meeting:
+        tags.extend(["meeting", "event"])
     return {
         "para_category": "Resources",
         "title": clean_title,
-        "tags": ["capture", "resource"],
+        "tags": tags,
         "summary": summary,
+        "is_meeting": is_meeting,
     }
 
 
@@ -207,6 +288,7 @@ def classify_capture(meta_path: Path, metadata: CaptureMetadata) -> Path:
     wiki_path = write_wiki_note(metadata, classification, body)
     mark_raw_processed(meta_path, metadata, wiki_path)
     return wiki_path
+
 
 
 def classify_all_unprocessed() -> int:
