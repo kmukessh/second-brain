@@ -32,17 +32,37 @@ def _get_secret_val(key: str) -> Optional[Any]:
     """Retrieve secret dict or string from Streamlit secrets or environment variables."""
     try:
         import streamlit as st
-        if hasattr(st, "secrets") and key in st.secrets:
-            return st.secrets[key]
+        if hasattr(st, "secrets"):
+            if key in st.secrets:
+                val = st.secrets[key]
+                if isinstance(val, (dict, list)):
+                    return val
+                if isinstance(val, str):
+                    val_clean = val.strip().strip("'").strip('"').strip()
+                    if val_clean.startswith("{") and val_clean.endswith("}"):
+                        try:
+                            return json.loads(val_clean)
+                        except Exception:
+                            pass
+                    return val_clean
+            key_lower = key.lower()
+            if key_lower in st.secrets:
+                val = st.secrets[key_lower]
+                if isinstance(val, (dict, list)):
+                    return val
     except Exception:
         pass
+
     import os
-    val = os.getenv(key, "")
+    val = os.getenv(key, "").strip().strip("'").strip('"').strip()
     if val:
-        try:
-            return json.loads(val)
-        except Exception:
-            return val
+        if val.startswith("{") and val.endswith("}"):
+            try:
+                return json.loads(val)
+            except Exception:
+                pass
+        return val
+
     return None
 
 
@@ -69,14 +89,14 @@ class GoogleServiceManager:
 
     def has_client_secrets(self) -> bool:
         """Check if credentials/client_secret.json exists or GOOGLE_CLIENT_SECRET_JSON is in secrets."""
-        if _get_secret_val("GOOGLE_CLIENT_SECRET_JSON") or _get_secret_val("GOOGLE_TOKEN_JSON"):
+        if _get_secret_val("GOOGLE_CLIENT_SECRET_JSON") or _get_secret_val("GOOGLE_TOKEN_JSON") or _get_secret_val("GOOGLE_REFRESH_TOKEN"):
             return True
         return self.client_secret_file.exists() and self.client_secret_file.stat().st_size > 0
 
     def is_authenticated(self) -> bool:
         """Check if valid OAuth2 credentials exist."""
         creds = self.get_credentials()
-        return creds is not None and creds.valid
+        return creds is not None and (creds.valid or bool(creds.refresh_token))
 
     def get_credentials(self) -> Optional[Credentials]:
         """Retrieve, refresh, or authenticate OAuth2 user credentials."""
@@ -98,6 +118,25 @@ class GoogleServiceManager:
                     creds = Credentials.from_authorized_user_info(token_secret, self.scopes)
             except Exception as exc:
                 print(f"[WARNING] GGL-01: Invalid GOOGLE_TOKEN_JSON secret: {exc}")
+
+        # 0b. Fallback to individual secret keys (GOOGLE_REFRESH_TOKEN)
+        if not creds:
+            refresh_tok = _get_secret_val("GOOGLE_REFRESH_TOKEN")
+            if refresh_tok and isinstance(refresh_tok, str):
+                client_id = _get_secret_val("GOOGLE_CLIENT_ID")
+                client_sec = _get_secret_val("GOOGLE_CLIENT_SECRET")
+                info = {
+                    "token": _get_secret_val("GOOGLE_ACCESS_TOKEN") or "",
+                    "refresh_token": refresh_tok,
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "client_id": client_id,
+                    "client_secret": client_sec,
+                    "scopes": self.scopes,
+                }
+                try:
+                    creds = Credentials.from_authorized_user_info(info, self.scopes)
+                except Exception as exc:
+                    print(f"[WARNING] GGL-01b: Could not build credentials from refresh token secret: {exc}")
 
         # 1. Load token if it exists on disk
         if not creds and self.token_file.exists():
