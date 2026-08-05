@@ -28,6 +28,24 @@ except ImportError:
     _GOOGLE_CLIENT_AVAILABLE = False
 
 
+import base64
+
+
+def _try_b64_decode(val: Any) -> Any:
+    if isinstance(val, str):
+        v = val.strip()
+        if len(v) > 16 and not v.startswith("{"):
+            try:
+                decoded = base64.b64decode(v.encode()).decode("utf-8")
+                if "1//" in decoded or "GOCSPX" in decoded or "google" in decoded or "ya29" in decoded or decoded.startswith("{"):
+                    if decoded.startswith("{") and decoded.endswith("}"):
+                        return json.loads(decoded)
+                    return decoded
+            except Exception:
+                pass
+    return val
+
+
 def _get_secret_val(key: str) -> Optional[Any]:
     """Retrieve secret dict or string from Streamlit secrets or environment variables."""
     try:
@@ -44,7 +62,7 @@ def _get_secret_val(key: str) -> Optional[Any]:
                             return json.loads(val_clean)
                         except Exception:
                             pass
-                    return val_clean
+                    return _try_b64_decode(val_clean)
             key_lower = key.lower()
             if key_lower in st.secrets:
                 val = st.secrets[key_lower]
@@ -61,7 +79,7 @@ def _get_secret_val(key: str) -> Optional[Any]:
                 return json.loads(val)
             except Exception:
                 pass
-        return val
+        return _try_b64_decode(val)
 
     return None
 
