@@ -36,6 +36,11 @@ def load_unprocessed_raw() -> list[tuple[Path, CaptureMetadata]]:
             continue
         if not metadata.processed:
             captures.append((meta_path, metadata))
+        elif metadata.wiki_path:
+            w_path = config.ROOT / metadata.wiki_path
+            if not w_path.exists():
+                metadata.processed = False
+                captures.append((meta_path, metadata))
     return captures
 
 
