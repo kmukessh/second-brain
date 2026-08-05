@@ -35,8 +35,8 @@ def _get_secret_val(key: str) -> Optional[Any]:
         if hasattr(st, "secrets"):
             if key in st.secrets:
                 val = st.secrets[key]
-                if isinstance(val, (dict, list)):
-                    return val
+                if isinstance(val, (dict, list)) or hasattr(val, "items"):
+                    return dict(val) if hasattr(val, "items") else val
                 if isinstance(val, str):
                     val_clean = val.strip().strip("'").strip('"').strip()
                     if val_clean.startswith("{") and val_clean.endswith("}"):
@@ -48,8 +48,8 @@ def _get_secret_val(key: str) -> Optional[Any]:
             key_lower = key.lower()
             if key_lower in st.secrets:
                 val = st.secrets[key_lower]
-                if isinstance(val, (dict, list)):
-                    return val
+                if isinstance(val, (dict, list)) or hasattr(val, "items"):
+                    return dict(val) if hasattr(val, "items") else val
     except Exception:
         pass
 
@@ -114,8 +114,9 @@ class GoogleServiceManager:
             try:
                 if isinstance(token_secret, str):
                     token_secret = json.loads(token_secret)
-                if isinstance(token_secret, dict):
-                    creds = Credentials.from_authorized_user_info(token_secret, self.scopes)
+                if isinstance(token_secret, dict) or hasattr(token_secret, "items"):
+                    token_dict = dict(token_secret)
+                    creds = Credentials.from_authorized_user_info(token_dict, self.scopes)
             except Exception as exc:
                 print(f"[WARNING] GGL-01: Invalid GOOGLE_TOKEN_JSON secret: {exc}")
 
