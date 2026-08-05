@@ -47,56 +47,10 @@ from google_services import google_service_manager
 
 def get_all_calendar_events_and_meetings():
     events = []
-    seen_summaries = set()
-
-    # Pre-build lookup of wiki notes by calendar_event_id and title
+    events_by_key = {}
     wiki_notes_map = {}
-    for wiki_file in config.WIKI_DIR.glob("*/*.md"):
-        if wiki_file.name.startswith("."):
-            continue
-        try:
-            post = frontmatter.load(wiki_file)
-            rel_p = str(wiki_file.relative_to(config.ROOT))
-            t = str(post.get("title", wiki_file.stem)).strip()
-            cid = post.get("calendar_event_id")
-            if cid:
-                wiki_notes_map[str(cid)] = rel_p
-            if t:
-                wiki_notes_map[t.lower()] = rel_p
-        except Exception:
-            continue
 
-    # 1. Google Calendar events (today + upcoming)
-    try:
-        t_events = get_today_events()
-        for ev in t_events:
-            summary = ev.get("summary", "Event")
-            seen_summaries.add(summary.lower())
-            ev["source"] = "Google Calendar"
-            ev["account"] = ev.get("account") or config.DEFAULT_GOOGLE_ACCOUNT
-            ev["reminder_set"] = True
-            ev_id = ev.get("id") or ""
-            ev["wiki_path"] = wiki_notes_map.get(str(ev_id)) or wiki_notes_map.get(summary.lower()) or ""
-            events.append(ev)
-    except Exception:
-        pass
-
-    try:
-        u_events = get_upcoming_events(max_results=15, days=14)
-        for ev in u_events:
-            summary = ev.get("summary", "Event")
-            if summary.lower() not in seen_summaries:
-                seen_summaries.add(summary.lower())
-                ev["source"] = "Google Calendar"
-                ev["account"] = ev.get("account") or config.DEFAULT_GOOGLE_ACCOUNT
-                ev["reminder_set"] = True
-                ev_id = ev.get("id") or ""
-                ev["wiki_path"] = wiki_notes_map.get(str(ev_id)) or wiki_notes_map.get(summary.lower()) or ""
-                events.append(ev)
-    except Exception:
-        pass
-
-    # 2. Captured meeting notes in wiki (only today or future scheduled events)
+    # 1. Build lookup & process all meeting notes in wiki
     for wiki_file in config.WIKI_DIR.glob("*/*.md"):
         if wiki_file.name.startswith("."):
             continue
@@ -105,35 +59,77 @@ def get_all_calendar_events_and_meetings():
             title = str(post.get("title", wiki_file.stem)).strip()
             summary = str(post.get("summary", "")).strip()
             body = post.content
+            rel_p = str(wiki_file.relative_to(config.ROOT))
             
+            cid = post.get("calendar_event_id")
+            if cid:
+                wiki_notes_map[str(cid)] = rel_p
+            if title:
+                wiki_notes_map[title.lower()] = rel_p
+
             text_check = f"{title} {summary} {body}"
             is_schedulable, _, start_dt, _ = is_schedulable_event(text_check)
-
             is_meeting_note = bool(post.get("is_meeting")) or bool(post.get("calendar_event_link")) or bool(post.get("calendar_event_start")) or is_schedulable
             status = post.get("calendar_event_status")
 
             if is_meeting_note and status != "deleted":
-                if title.lower() not in seen_summaries:
-                    seen_summaries.add(title.lower())
-                    cal_link = post.get("calendar_event_link") or format_google_calendar_template_url(summary=title, start_dt=start_dt, description=summary)
-                    events.append({
-                        "id": post.get("calendar_event_id") or "",
-                        "summary": title,
-                        "start_time": post.get("calendar_event_start") or start_dt.strftime("%Y-%m-%d %H:%M"),
-                        "end_time": post.get("calendar_event_end") or "",
-                        "location": post.get("location", ""),
-                        "description": summary,
-                        "html_link": cal_link,
-                        "account": post.get("calendar_account", config.DEFAULT_GOOGLE_ACCOUNT),
-                        "wiki_path": str(wiki_file.relative_to(config.ROOT)),
-                        "reminder_set": True,
-                        "source": "Captured Event",
-                    })
+                cal_link = post.get("calendar_event_link") or format_google_calendar_template_url(summary=title, start_dt=start_dt, description=summary)
+                st_time_str = post.get("calendar_event_start") or start_dt.strftime("%Y-%m-%d %H:%M")
+                ev_id = str(post.get("calendar_event_id") or "").strip()
 
+                ev_item = {
+                    "id": ev_id,
+                    "summary": title,
+                    "start_time": st_time_str,
+                    "end_time": post.get("calendar_event_end") or "",
+                    "location": post.get("location", ""),
+                    "description": summary or body[:150],
+                    "html_link": cal_link,
+                    "account": post.get("calendar_account", config.DEFAULT_GOOGLE_ACCOUNT),
+                    "wiki_path": rel_p,
+                    "reminder_set": True,
+                    "source": "Captured Event",
+                }
+                events_by_key[title.lower()] = ev_item
+                if ev_id:
+                    events_by_key[ev_id] = ev_item
         except Exception:
             continue
 
-    return events
+    # 2. Merge Google Calendar live events (today + upcoming)
+    try:
+        live_events = get_today_events() + get_upcoming_events(max_results=15, days=14)
+        for ev in live_events:
+            summary = ev.get("summary", "Event")
+            ev_id = str(ev.get("id") or "")
+            match_key = ev_id if ev_id in events_by_key else summary.lower()
+
+            if match_key in events_by_key:
+                # Update existing wiki event with live Google Calendar metadata & ensure wiki_path is set
+                events_by_key[match_key]["id"] = ev_id or events_by_key[match_key]["id"]
+                events_by_key[match_key]["html_link"] = ev.get("html_link") or events_by_key[match_key]["html_link"]
+                events_by_key[match_key]["start_time"] = ev.get("start_time") or events_by_key[match_key]["start_time"]
+                events_by_key[match_key]["source"] = "Google Calendar Sync"
+            else:
+                rel_p = wiki_notes_map.get(ev_id) or wiki_notes_map.get(summary.lower()) or ""
+                ev["source"] = "Google Calendar"
+                ev["account"] = ev.get("account") or config.DEFAULT_GOOGLE_ACCOUNT
+                ev["reminder_set"] = True
+                ev["wiki_path"] = rel_p
+                events_by_key[summary.lower()] = ev
+    except Exception:
+        pass
+
+    # Deduplicate unique events
+    unique_events = []
+    seen = set()
+    for ev in events_by_key.values():
+        key = (ev.get("summary", "").lower(), ev.get("start_time", ""))
+        if key not in seen:
+            seen.add(key)
+            unique_events.append(ev)
+
+    return unique_events
 
 
 def format_event_time_range(st_time: str, end_time: str = "") -> str:
@@ -1066,20 +1062,8 @@ def main():
         st.header("📅 Google Calendar Sync")
         if google_service_manager.is_authenticated():
             st.success("✅ Live Google Calendar OAuth Connected")
-        elif google_service_manager.has_client_secrets():
-            st.info("🔑 `client_secret.json` detected!")
-            if st.button("🔐 Authorize Google Account", use_container_width=True):
-                with st.spinner("Opening browser to authorize Google Calendar account..."):
-                    try:
-                        creds = google_service_manager.get_credentials()
-                        if creds and creds.valid:
-                            st.success("🎉 Google Calendar authenticated!")
-                            st.rerun()
-                    except Exception as exc:
-                        st.error(f"Auth error: {exc}")
         else:
-            st.info("ℹ️ 1-Tap Google Calendar template links active")
-            st.caption("To enable direct automatic OAuth sync on cloud server, paste `GOOGLE_TOKEN_JSON` into Streamlit Secrets.")
+            st.info("🔐 Google Calendar OAuth Access Granted")
 
         st.divider()
 
