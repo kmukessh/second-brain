@@ -29,11 +29,14 @@ except ImportError:
 
 
 import base64
+import urllib.parse
 
 
 def _try_b64_decode(val: Any) -> Any:
     if isinstance(val, str):
         v = val.strip()
+        if "%2F" in v or "%2f" in v:
+            v = urllib.parse.unquote(v)
         if len(v) > 16 and not v.startswith("{"):
             try:
                 decoded = base64.b64decode(v.encode()).decode("utf-8")
@@ -43,6 +46,7 @@ def _try_b64_decode(val: Any) -> Any:
                     return decoded
             except Exception:
                 pass
+        return v
     return val
 
 
